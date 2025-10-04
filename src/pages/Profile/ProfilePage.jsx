@@ -1,3 +1,7 @@
+
+
+
+
 export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-[390px] space-y-3">

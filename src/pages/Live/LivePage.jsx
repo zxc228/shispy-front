@@ -1,8 +1,196 @@
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 export default function LivePage() {
+  const navigate = useNavigate()
+
+  // filters
+  const filters = [
+    { id: 'all', label: 'All' },
+    { id: 'top', label: 'TOP' },
+    { id: 'more', label: 'More bid' },
+    { id: 'new', label: 'Just started' },
+  ]
+  const [active, setActive] = useState('all')
+
+  // mock battles
+  const battles = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => ({
+        id: i + 1,
+        a: {
+          name: `player_${i + 1}A`,
+          level: 12,
+          betTon: 2.1,
+          avatar: null,
+        },
+        b: {
+          name: `player_${i + 1}B`,
+          level: 16,
+          betTon: 2.1,
+          avatar: null,
+        },
+        createdAt: Date.now() - i * 60_000,
+      })),
+    []
+  )
+
+  const filtered = useMemo(() => {
+    if (active === 'top') {
+      return battles // одинаковые ставки — оставляем как есть
+    }
+    if (active === 'more') {
+      return battles
+    }
+    if (active === 'new') {
+      return battles.slice(0, 6)
+    }
+    return battles
+  }, [active, battles])
+
   return (
-    <section className="space-y-2">
-      <h1 className="text-lg font-semibold">Live</h1>
-      <p className="opacity-70">Лента боёв появится здесь…</p>
-    </section>
+    <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
+      {/* Внутренний контейнер прокрутки контента страницы */}
+      <div className="pb-[120px] space-y-4 px-4">
+        {/* Заголовок секции */}
+        <SectionHeader title="Live" />
+
+        {/* Фильтры */}
+        <div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={[
+                  'h-10 px-3 rounded-xl text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60',
+                  active === f.id
+                    ? 'bg-neutral-700 text-white'
+                    : 'bg-black text-white outline outline-1 outline-neutral-700 hover:bg-neutral-800/40',
+                  'transition-transform duration-150 active:scale-[0.99] cursor-pointer',
+                ].join(' ')}
+                aria-pressed={active === f.id}
+                onClick={() => setActive(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Список карточек боёв */}
+        <div className="flex flex-col gap-3 py-1">
+          {filtered.map((b) => (
+            <BattleCard key={b.id} battle={b} onWatch={() => navigate(`/battle/${b.id}`)} />
+          ))}
+        </div>
+      </div>
+
+  {/* Удалён градиент-оверлей перед футером по запросу */}
+
+     {/* Фиксированная CTA Create Battle над таббаром */}
+      <div className="fixed left-0 right-0 bottom-[72px] w-full z-40">
+        <div className="mx-auto max-w-[390px] relative px-4">
+          {/* удалили белую «свечку» */}
+          <button
+            type="button"
+            onClick={() => navigate('/create')}
+            className="w-full h-12 px-4 py-3 rounded-xl
+                      bg-gradient-to-l from-white to-gray-200
+                      shadow-[0_8px_24px_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(206,196,189,1)]
+                      text-base font-semibold text-neutral-800
+                      [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60
+                      active:translate-y-[0.5px] transition-transform duration-150 cursor-pointer"
+          >
+            Create Battle
+          </button>
+        </div>
+      </div>
+
+
+    </div>
+  )
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div className="w-full py-2 rounded-2xl">
+      <h2 className="text-xl font-medium leading-none text-neutral-50">{title}</h2>
+    </div>
+  )
+}
+
+function BattleCard({ battle, onWatch }) {
+  const { a, b } = battle
+  return (
+    <div className="w-full p-3 rounded-xl overflow-hidden bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] outline outline-1 outline-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)]">
+      <div className="flex flex-col items-center gap-5">
+        {/* Участники */}
+  <div className="w-full flex items-start justify-center gap-4">
+          {/* Левый (A) */}
+          <div className="flex flex-1 items-start justify-center gap-2 min-w-0">
+            {/* Аватар + ставка */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-[10px] border border-zinc-500 bg-neutral-700 object-cover shrink-0" />
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-50">{a.betTon.toFixed(2)}</span>
+                <span className="w-3 h-3 bg-sky-500 shrink-0" />
+                <span className="w-1.5 h-1.5 bg-white rounded shrink-0" />
+              </div>
+            </div>
+            {/* Имя + уровень */}
+            <div className="w-20 h-12 flex items-center min-w-0">
+              <div className="flex-1 flex flex-col items-start gap-0.5 min-w-0">
+                <div className="w-full text-xs font-light text-white truncate [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]">
+                  {a.name}
+                </div>
+                <div className="text-[10px] text-neutral-700">Level {a.level}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Центр */}
+          <div className="flex flex-col items-center">
+            <div className="text-xl font-medium text-orange-400">vs</div>
+          </div>
+
+          {/* Правый (B) */}
+          <div className="flex flex-1 items-start justify-center gap-2 min-w-0">
+            {/* Имя + уровень (вправо) */}
+            <div className="w-20 h-12 flex items-center min-w-0">
+              <div className="flex-1 flex flex-col items-start gap-0.5 min-w-0">
+                <div className="w-full text-right text-xs font-light text-white truncate [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]">
+                  {b.name}
+                </div>
+                <div className="text-right text-[10px] text-neutral-700">Level {b.level}</div>
+              </div>
+            </div>
+            {/* Аватар + ставка */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-[10px] border border-zinc-500 bg-neutral-700 object-cover shrink-0" />
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-50">{b.betTon.toFixed(2)}</span>
+                <span className="w-3 h-3 bg-sky-500 shrink-0" />
+                <span className="w-1.5 h-1.5 bg-white rounded shrink-0" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Линии и кнопка Watch now */}
+        <div className="w-full flex items-center gap-3">
+          <div className="flex-1 h-px bg-gradient-to-l from-amber-600 to-neutral-800" />
+          <button
+            type="button"
+            onClick={onWatch}
+            className="h-12 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-base font-semibold text-white [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 cursor-pointer"
+          >
+            Watch now
+          </button>
+          <div className="flex-1 h-px bg-gradient-to-l from-neutral-800 to-amber-600" />
+        </div>
+      </div>
+    </div>
   )
 }
