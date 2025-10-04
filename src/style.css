@@ -1,1 +1,71 @@
 @import "tailwindcss";
+
+/* Global font setup: use SF_Pro_Display everywhere, with safe fallbacks */
+@layer base {
+	/* If SF Pro Display is installed on the OS, use it via local();
+		 You can also drop licensed .woff2 files into /public/fonts and extend src with url('/fonts/...'). */
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display"),
+			local("SF Pro Text"),
+			local("SFProDisplay-Regular"),
+			local("SFProText-Regular");
+		font-weight: 400;
+		font-style: normal;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Medium"),
+			local("SF Pro Text Medium"),
+			local("SFProDisplay-Medium"),
+			local("SFProText-Medium");
+		font-weight: 500;
+		font-style: normal;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Semibold"),
+			local("SF Pro Text Semibold"),
+			local("SFProDisplay-Semibold"),
+			local("SFProText-Semibold");
+		font-weight: 600;
+		font-style: normal;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Bold"),
+			local("SF Pro Text Bold"),
+			local("SFProDisplay-Bold"),
+			local("SFProText-Bold");
+		font-weight: 700;
+		font-style: normal;
+		font-display: swap;
+	}
+
+	:root {
+		/* Make Tailwind's sans stack resolve to our desired font first */
+		--font-sans: "SF_Pro_Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+			Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji",
+			"Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	}
+
+	html, body, #root {
+		font-family: "SF_Pro_Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+			"Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	}
+
+	/* Ensure controls inherit the app font */
+	button, input, select, textarea {
+		font: inherit;
+	}
+}
