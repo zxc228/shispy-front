@@ -11,7 +11,7 @@ export default function AppLayout() {
       <Header hidden={hidden} />
       {/* общий скролл-контейнер для ВСЕХ страниц */}
       <main
-        className="flex-1 overflow-y-auto px-4 py-4 pb-24 max-w-[390px] w-full mx-auto"
+        className="flex-1 overflow-y-auto px-4 py-4 pb-24 max-w-[390px] w-full mx-auto scrollbar-invisible scrollbar-stable"
         onScroll={onScroll}
       >
         <Outlet />

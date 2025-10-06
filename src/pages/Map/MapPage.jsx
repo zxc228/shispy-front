@@ -1,16 +1,32 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function MapPage() {
   const navigate = useNavigate()
 
+  // Disable scrolling on this page by turning off overflow on the shared <main>
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
+    const prevOverflowY = main.style.overflowY
+    const prevScrollbarGutter = main.style.scrollbarGutter
+    main.style.overflowY = 'hidden'
+    // avoid reserving gutter on this page
+    main.style.scrollbarGutter = 'auto'
+    return () => {
+      main.style.overflowY = prevOverflowY
+      main.style.scrollbarGutter = prevScrollbarGutter
+    }
+  }, [])
+
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
-      {/* Контентный скролл-контейнер */}
-      <div className="px-2.5 pb-[120px]">
+  {/* Контентный контейнер без скролла */}
+  <div className="px-2.5 pb-0">
         {/* Небольшой зазор под хедером уже создаётся padding-ом контейнера */}
 
         {/* Пустое состояние */}
-        <div className="w-80 mx-auto mt-[calc(50vh-140px)] flex flex-col items-center gap-4">
+        <div className="w-80 mx-auto min-h-[60vh] flex flex-col items-center justify-center gap-4">
           <div className="text-7xl">🗺️</div>
           <div className="flex flex-col items-center gap-1">
             <div className="text-neutral-50 text-xl font-medium text-center">
@@ -23,9 +39,6 @@ export default function MapPage() {
           </div>
         </div>
       </div>
-
-      {/* Градиент перед таббаром */}
-      <div className="pointer-events-none fixed left-0 bottom-[88px] w-full h-28 bg-gradient-to-l from-black to-black/0 z-30" />
 
       {/* CTA-кнопка (над таббаром), с учётом safe area */}
       <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full px-2.5 z-40">

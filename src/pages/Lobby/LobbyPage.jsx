@@ -1,8 +1,10 @@
+import { Outlet } from 'react-router-dom'
+
 export default function LobbyPage() {
   return (
-    <section className="space-y-2">
-      <h1 className="text-lg font-semibold">Lobby</h1>
-      <p className="opacity-70">Лобби появится здесь…</p>
-    </section>
+    <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
+      {/* Внутренний контейнер делегируем дочерним страницам */}
+      <Outlet />
+    </div>
   )
 }
