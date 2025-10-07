@@ -25,7 +25,12 @@ export default function Header({
           {/* LEFT: logo + caption */}
           <div className="h-11 flex items-center gap-2">
             <div className="w-11 h-11 flex items-center justify-center">
-              <img src={logoUrl} alt="Shipsy logo" className="w-8 h-8 object-contain" />
+              <img
+                src={logoUrl}
+                alt="Shipsy logo"
+                className="w-8 h-8 object-contain cursor-pointer"
+                onClick={() => nav('/')}
+              />
             </div>
             <div className="flex flex-col justify-center">
               <div className="text-white text-base font-semibold font-['SF_Pro_Display'] leading-none">
