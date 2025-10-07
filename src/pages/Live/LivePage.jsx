@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom'
 
 export default function LivePage() {
   const navigate = useNavigate()
+  const [message, setMessage] = useState('')
+
+  const showUnderConstruction = () => {
+    setMessage('Under construction')
+    setTimeout(() => setMessage(''), 2000) // Clear message after 2 seconds
+  }
 
   // filters
   const filters = [
@@ -50,6 +56,11 @@ export default function LivePage() {
 
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
+      {message && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded shadow-lg z-50">
+          {message}
+        </div>
+      )}
       {/* Внутренний контейнер прокрутки контента страницы */}
       <div className="pb-[120px] space-y-4 px-4">
         {/* Заголовок секции */}
@@ -81,7 +92,13 @@ export default function LivePage() {
         {/* Список карточек боёв */}
         <div className="flex flex-col gap-3 py-1">
           {filtered.map((b) => (
-            <BattleCard key={b.id} battle={b} onWatch={() => navigate(`/battle/${b.id}`)} />
+            <BattleCard
+              key={b.id}
+              battle={b}
+              onWatch={() => {
+                showUnderConstruction()
+              }}
+            />
           ))}
         </div>
       </div>

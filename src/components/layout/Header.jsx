@@ -33,10 +33,10 @@ export default function Header({
               />
             </div>
             <div className="flex flex-col justify-center">
-              <div className="text-white text-base font-semibold font-['SF_Pro_Display'] leading-none">
+              <div className="text-white text-base font-semibold font-sans leading-none">
                 Shipsy
               </div>
-              <div className="text-white/50 text-[10px] leading-none font-['SF_Pro_Display']">
+              <div className="text-white/50 text-[10px] leading-none font-sans">
                 For fights For player
               </div>
             </div>
@@ -48,7 +48,7 @@ export default function Header({
             <div className="absolute left-[-1px] top-0 h-11 pl-3 pr-4 py-3 rounded-xl inline-flex items-center">
               <div className="inline-flex items-center gap-1">
                 <img src={TonIcon} alt="TON" className="w-4 h-4 shrink-0 object-contain" />
-                <span className="text-white text-base font-bold font-['SF_Pro_Display']">
+                <span className="text-white text-base font-bold font-sans">
                   {balance}
                 </span>
               </div>
@@ -70,7 +70,7 @@ export default function Header({
                 {/* вертикальная черта */}
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-white rounded" />
               </span>
-              <span className="text-white text-base font-semibold leading-none font-['SF_Pro_Display'] [text-shadow:_0_1px_25px_rgb(0_0_0_/_0.25)]">
+              <span className="text-white text-base font-semibold leading-none font-sans [text-shadow:_0_1px_25px_rgb(0_0_0_/_0.25)]">
                 Add
               </span>
             </button>

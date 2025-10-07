@@ -45,7 +45,7 @@ export default function BottomNav() {
                   alt={`${t.label} icon active`}
                   className="w-6 h-6 hidden group-[.active]:block"
                 />
-                <span className="text-xs font-normal font-['SF_Pro_Display']">{t.label}</span>
+                <span className="text-xs font-normal font-sans">{t.label}</span>
               </div>
             </NavLink>
           </li>

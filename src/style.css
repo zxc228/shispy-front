@@ -10,7 +10,8 @@
 			local("SF Pro Display"),
 			local("SF Pro Text"),
 			local("SFProDisplay-Regular"),
-			local("SFProText-Regular");
+			local("SFProText-Regular"),
+			url("/fonts/SF-Pro-Display-Regular.otf") format("opentype");
 		font-weight: 400;
 		font-style: normal;
 		font-display: swap;
@@ -22,7 +23,8 @@
 			local("SF Pro Display Medium"),
 			local("SF Pro Text Medium"),
 			local("SFProDisplay-Medium"),
-			local("SFProText-Medium");
+			local("SFProText-Medium"),
+			url("/fonts/SF-Pro-Display-Medium.otf") format("opentype");
 		font-weight: 500;
 		font-style: normal;
 		font-display: swap;
@@ -34,7 +36,8 @@
 			local("SF Pro Display Semibold"),
 			local("SF Pro Text Semibold"),
 			local("SFProDisplay-Semibold"),
-			local("SFProText-Semibold");
+			local("SFProText-Semibold"),
+			url("/fonts/SF-Pro-Display-Semibold.otf") format("opentype");
 		font-weight: 600;
 		font-style: normal;
 		font-display: swap;
@@ -46,9 +49,63 @@
 			local("SF Pro Display Bold"),
 			local("SF Pro Text Bold"),
 			local("SFProDisplay-Bold"),
-			local("SFProText-Bold");
+			local("SFProText-Bold"),
+			url("/fonts/SF-Pro-Display-Bold.otf") format("opentype");
 		font-weight: 700;
 		font-style: normal;
+		font-display: swap;
+	}
+
+	/* Italic variants */
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Regular Italic"),
+			local("SF Pro Text Regular Italic"),
+			local("SFProDisplay-RegularItalic"),
+			local("SFProText-RegularItalic"),
+			url("/fonts/SF-Pro-Display-RegularItalic.otf") format("opentype");
+		font-weight: 400;
+		font-style: italic;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Medium Italic"),
+			local("SF Pro Text Medium Italic"),
+			local("SFProDisplay-MediumItalic"),
+			local("SFProText-MediumItalic"),
+			url("/fonts/SF-Pro-Display-MediumItalic.otf") format("opentype");
+		font-weight: 500;
+		font-style: italic;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Semibold Italic"),
+			local("SF Pro Text Semibold Italic"),
+			local("SFProDisplay-SemiboldItalic"),
+			local("SFProText-SemiboldItalic"),
+			url("/fonts/SF-Pro-Display-SemiboldItalic.otf") format("opentype");
+		font-weight: 600;
+		font-style: italic;
+		font-display: swap;
+	}
+
+	@font-face {
+		font-family: "SF_Pro_Display";
+		src:
+			local("SF Pro Display Bold Italic"),
+			local("SF Pro Text Bold Italic"),
+			local("SFProDisplay-BoldItalic"),
+			local("SFProText-BoldItalic"),
+			url("/fonts/SF-Pro-Display-BoldItalic.otf") format("opentype");
+		font-weight: 700;
+		font-style: italic;
 		font-display: swap;
 	}
 
