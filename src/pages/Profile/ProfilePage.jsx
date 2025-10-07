@@ -1,6 +1,4 @@
-
-
-
+import PromoCodeSection from './PromoCodeSection'
 
 export default function ProfilePage() {
   return (
@@ -117,29 +115,8 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* PROMO CODE (карточка на странице, без sheet) */}
-      <section className="w-full px-2.5">
-        <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-offset-[-1px] outline-neutral-700 flex flex-col gap-3 overflow-hidden">
-          <div className="flex flex-col gap-1">
-            <div className="text-neutral-50 text-base font-semibold font-['SF_Pro_Display']">Promo code</div>
-            <div className="text-xs font-normal font-['SF_Pro_Display']">
-              <span className="text-orange-400">Follow the</span>
-              <span className="text-neutral-700"> </span>
-              <span className="text-orange-400">telegram channel</span>
-              <span className="text-neutral-700"> and get bonuses</span>
-            </div>
-          </div>
-
-          <button
-            className="w-80 h-12 pl-4 pr-3 py-3 bg-gradient-to-l from-white to-gray-200 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] inline-flex items-center justify-center gap-1"
-            aria-label="Activate promo"
-          >
-            <span className="text-neutral-800 text-base font-semibold font-['SF_Pro_Display'] [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
-              Activate
-            </span>
-          </button>
-        </div>
-      </section>
+      {/* PROMO CODE */}
+      <PromoCodeSection />
 
       {/* STREAMER MODE */}
       <section className="w-full px-2.5">
