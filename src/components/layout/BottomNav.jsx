@@ -1,12 +1,23 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom';
+import MapIcon from '../icons/MapIcon.svg';
+import MapIconActivated from '../icons/MapIcon_activated.svg';
+import LiveIcon from '../icons/LiveIcon.svg';
+import LiveIconActivated from '../icons/LiveIcon_activated.svg';
+import LobbyIcon from '../icons/LobbyIcon.svg';
+import LobbyIconActivated from '../icons/LobbyIcon_activated.svg';
+import TreasureIcon from '../icons/TreasureIcon.svg';
+import TreasureIconActivated from '../icons/TreasureIcon_activated.svg';
+import ProfileIcon from '../icons/ProfileIcon.svg';
+import ProfileIconActivated from '../icons/ProfileIcon_activated.svg';
 
 const tabs = [
-  { to: '/map', label: 'Maps' },
-  { to: '/live', label: 'Live' },
-  { to: '/lobby', label: 'Lobby' },
-  { to: '/treasure', label: 'Treasure' },
-  { to: '/profile', label: 'Profile' },
-]
+  { to: '/map', label: 'Maps', icon: MapIcon, activatedIcon: MapIconActivated },
+  { to: '/live', label: 'Live', icon: LiveIcon, activatedIcon: LiveIconActivated },
+  { to: '/lobby', label: 'Lobby', icon: LobbyIcon, activatedIcon: LobbyIconActivated },
+  { to: '/treasure', label: 'Treasure', icon: TreasureIcon, activatedIcon: TreasureIconActivated },
+  { to: '/profile', label: 'Profile', icon: ProfileIcon, activatedIcon: ProfileIconActivated },
+];
+
 
 export default function BottomNav() {
   return (
@@ -18,27 +29,24 @@ export default function BottomNav() {
               to={t.to}
               className={({ isActive }) =>
                 [
-                  'w-10 h-12 inline-flex flex-col items-center justify-start gap-1',
-                  isActive ? 'text-orange-400' : 'text-white/50'
+                  'group w-10 h-12 inline-flex flex-col items-center justify-start gap-1',
+                  isActive ? 'text-orange-400 active' : 'text-white/50'
                 ].join(' ')
               }
             >
-              {/* TODO: заменить на реальные SVG иконки из фигмы */}
-              <span className="w-6 h-6 relative">
-                <span className="w-5 h-4 left-[2px] top-[6px] absolute bg-neutral-50/80 rounded-sm" />
-              </span>
-              <span className="text-xs font-normal font-['SF_Pro_Display']">{t.label}</span>
-              {/* активный градиентный подчёрк */}
-              {({ isActive }) =>
-                isActive ? (
-                  <span className="w-9 h-0 relative mt-[2px]">
-                    <span className="w-9 h-0 left-0 top-0 absolute bg-gradient-to-b from-orange-400 to-amber-700 outline outline-1 outline-offset-[-0.5px] outline-orange-400 blur-[2.5px]" />
-                    <span className="w-9 h-0 left-0 top-0 absolute outline outline-1 outline-offset-[-0.5px] outline-orange-400" />
-                  </span>
-                ) : (
-                  <span className="w-9 h-0" />
-                )
-              }
+              <div className="flex flex-col items-center justify-start gap-1">
+                <img
+                  src={t.icon}
+                  alt={`${t.label} icon`}
+                  className="w-6 h-6 block group-[.active]:hidden"
+                />
+                <img
+                  src={t.activatedIcon}
+                  alt={`${t.label} icon active`}
+                  className="w-6 h-6 hidden group-[.active]:block"
+                />
+                <span className="text-xs font-normal font-['SF_Pro_Display']">{t.label}</span>
+              </div>
             </NavLink>
           </li>
         ))}
