@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
+import TonSvg from '../../components/icons/TonIcon.svg'
 
 /** @typedef {{ id: string; image?: string|null; priceTON: number }} Treasure */
 
@@ -56,7 +58,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
   return (
     <div className="h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white relative overflow-hidden">
       {/* scroll area (контент), сохраняем «гуттер» скроллбара */}
-      <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2 pb-4 [scrollbar-gutter:stable_both-edges]">
+  <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2 pb-4 [scrollbar-gutter:stable_both-edges]">
         {view === 'empty' ? (
           <EmptyInventoryBlock
             onAddTreasure={() => {
@@ -120,11 +122,9 @@ function TreasurePickerGrid({ inventory, selectedIds, onToggle, onAddTreasure })
   const cards = [
     { type: 'add' },
     ...inventory.map((t) => ({ type: 'item', data: t })),
-    { type: 'empty' },
-    { type: 'empty' },
   ]
   return (
-    <div className="grid grid-cols-3 gap-1">
+    <div className="grid grid-cols-3 gap-2 place-items-center">
       {cards.map((c, idx) => {
         if (c.type === 'add') {
           return (
@@ -133,16 +133,6 @@ function TreasurePickerGrid({ inventory, selectedIds, onToggle, onAddTreasure })
               variant="add"
               selected={false}
               onToggle={() => onAddTreasure()}
-            />
-          )
-        }
-        if (c.type === 'empty') {
-          return (
-            <TreasureCard
-              key={`empty-${idx}`}
-              variant="empty"
-              selected={false}
-              onToggle={() => {}}
             />
           )
         }
@@ -163,7 +153,7 @@ function TreasurePickerGrid({ inventory, selectedIds, onToggle, onAddTreasure })
 }
 
 function TreasureCard({ variant, treasure, selected, onToggle }) {
-  const baseSize = 'w-28 h-32'
+  const baseSize = 'w-24 h-28'
   if (variant === 'add') {
     return (
       <button
@@ -180,9 +170,7 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
 
   if (variant === 'empty') {
     return (
-      <div
-        className={`${baseSize} rounded-[10px] border border-neutral-700 bg-neutral-800/30`}
-      />
+      <div className={`${baseSize} rounded-[10px] border border-neutral-700 bg-neutral-800/30 p-2`} />
     )
   }
 
@@ -195,19 +183,23 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden active:scale-95 transition-transform`}
     >
       {treasure?.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={treasure.image}
-          alt="Treasure"
-          className="w-full h-full object-cover rounded-[10px]"
-        />
+        <div className="w-full h-full p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={treasure.image}
+            alt="Treasure"
+            className="w-full h-full object-cover rounded-[8px]"
+          />
+        </div>
       ) : (
-        <div className="w-full h-full bg-neutral-700" />
+        <div className="w-full h-full bg-neutral-700 grid place-items-center p-2">
+          <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
+        </div>
       )}
 
       {/* выбранное состояние — как в dev-mode: градиентный подсвет + рамка 2px */}
       {selected && (
-        <span className="absolute inset-0 rounded-[10px] pointer-events-none bg-gradient-to-b from-orange-400/0 to-orange-400/20 shadow-[0_0_25px_0_rgba(200,109,55,0.50)] border-2 border-orange-400" />
+        <span className="absolute inset-0 rounded-[10px] pointer-events-none bg-orange-400/25 shadow-[0_0_25px_0_rgba(200,109,55,0.50)] border-2 border-orange-400" />
       )}
     </button>
   )
@@ -216,20 +208,18 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
 function SummaryFooter({ selectedCount, totalTon, onCreate }) {
   const disabled = selectedCount === 0
   return (
-    <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
+    <div className="fixed left-0 right-0 bottom-[calc(72px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
-        <div className="rounded-2xl outline outline-1 outline-offset-[-1px] outline-neutral-700 pt-3 px-3 pb-3 bg-[radial-gradient(ellipse_62.58%_57.57%_at_80.72%_0%,_rgba(34,34,34,.5)_0%,_rgba(17,17,17,.5)_100%)]">
-          <div className="flex items-center justify-between">
-            <div className="text-neutral-700 text-base font-medium">Selected:</div>
+        <div className="rounded-2xl outline outline-1 outline-offset-[-1px] outline-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <div className="text-neutral-700 text-sm font-medium">Selected:</div>
             <div className="inline-flex items-center gap-2">
               <div className="text-neutral-50 text-lg font-medium">
                 {selectedCount} {selectedCount === 1 ? 'gift' : 'gifts'}
               </div>
-              <div className="h-8 px-2.5 py-2 bg-black rounded-xl inline-flex items-center gap-1">
-                {/* TON икон-слоты как в макете (голубой квадратик + белая точка) */}
-                <span className="w-3 h-3 bg-sky-500" />
-                <span className="w-1.5 h-1.5 bg-white rounded" />
-                <span className="text-white text-lg font-bold">
+              <div className="h-7 px-2 bg-black rounded-xl inline-flex items-center gap-1.5 shrink-0">
+                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
+                <span className="text-white text-base font-bold">
                   {totalTon.toFixed(2)} TON
                 </span>
               </div>
@@ -240,9 +230,9 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
             Fixed game commission of 0.2 TON
           </div>
 
-          <div className="mt-2 relative">
+          <div className="mt-1.5 relative">
             {!disabled && (
-              <div className="absolute inset-0 h-12 p-3 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
+              <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
             )}
             <button
               type="button"
@@ -250,7 +240,7 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
               disabled={disabled}
               onClick={onCreate}
               className={[
-                'w-full h-12 px-4 py-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60',
+                'w-full h-11 px-4 py-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60',
                 disabled
                   ? 'bg-zinc-100/25 text-zinc-500 shadow-[inset_0_-1px_0_0_rgba(255,255,255,0.10)] cursor-not-allowed'
                   : 'bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform duration-150',

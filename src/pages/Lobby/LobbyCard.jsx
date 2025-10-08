@@ -1,6 +1,6 @@
 import React from 'react'
 import TonSvg from '../../components/icons/TonIcon.svg'
-import TreasureSvg from '../../components/icons/TreasureIcon.svg'
+import TreasureSvg from '../../components/icons/EmptyGift.svg'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 

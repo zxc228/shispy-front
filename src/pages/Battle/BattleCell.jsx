@@ -1,3 +1,5 @@
+import CellBattleIcon from '../../components/icons/CellBattleIcon.svg'
+
 export default function BattleCell({ id, state, disabled, onSelect, showSpinner, showBadge }) {
   const base = "aspect-square w-full rounded-xl outline outline-1 outline-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] relative overflow-hidden";
 
@@ -20,9 +22,9 @@ export default function BattleCell({ id, state, disabled, onSelect, showSpinner,
       onClick={() => onSelect?.(id)}
       className={[base, stateClasses, disabledClasses].join(' ')}
     >
-      {/* wheel placeholder */}
+      {/* base icon */}
       <div className="absolute inset-0 grid place-items-center">
-        <div className="w-7 h-7 bg-neutral-600 rounded-md" />
+        <img src={CellBattleIcon} alt="Cell" className="w-7 h-7 opacity-80" />
       </div>
 
       {/* spinner overlay */}
