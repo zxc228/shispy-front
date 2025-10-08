@@ -21,8 +21,12 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm">
-      <ul className="mx-auto max-w-[390px] w-full px-8 grid grid-cols-5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0px)' }}>
+    <nav
+      className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0px)' }}
+    >
+      <div className="mx-auto max-w-[390px] w-full px-8">
+        <ul className="grid grid-cols-5">
         {tabs.map((t) => (
           <li key={t.to} className="h-12 inline-flex flex-col items-center justify-center">
             <NavLink
@@ -50,8 +54,8 @@ export default function BottomNav() {
             </NavLink>
           </li>
         ))}
-      </ul>
-      
+        </ul>
+      </div>
     </nav>
   )
 }

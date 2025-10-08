@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CreateBattleCTA from '../../components/common/CreateBattleCTA'
 import LobbyFilters from './LobbyFilters'
 import LobbyCard from './LobbyCard'
 
@@ -21,19 +22,7 @@ export default function LobbyPage() {
     )
   )
 
-  // Ensure the shared <main> from AppLayout doesn't scroll; only inner content scrolls
-  useEffect(() => {
-    const main = document.querySelector('main')
-    if (!main) return
-    const prevOverflowY = main.style.overflowY
-    const prevScrollbarGutter = main.style.scrollbarGutter
-    main.style.overflowY = 'hidden'
-    main.style.scrollbarGutter = 'auto'
-    return () => {
-      main.style.overflowY = prevOverflowY
-      main.style.scrollbarGutter = prevScrollbarGutter
-    }
-  }, [])
+  // Use shared <main> scroll from AppLayout. No inner scroll container to avoid double scroll.
 
   const filtered = useMemo(() => {
     switch (activeFilter) {
@@ -60,8 +49,8 @@ export default function LobbyPage() {
 
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
-      {/* Scrollable content area */}
-      <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
+      {/* Page content (scrolls via shared <main>) */}
+  <div className="px-4 pt-2 pb-[120px]">
         {/* promo card */}
         <div className="p-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-neutral-700 flex justify-between items-center">
           <div className="flex flex-col">
@@ -99,20 +88,8 @@ export default function LobbyPage() {
           )}
         </div>
       </div>
-
-      {/* Fixed CTA above tabbar */}
-      <div className="fixed left-0 right-0 bottom-[calc(80px+env(safe-area-inset-bottom))] px-2.5 z-40">
-        <div className="mx-auto max-w-[390px] relative">
-          <div className="absolute inset-0 h-12 p-3 bg-gradient-to-b from-white/75 to-white/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
-          <button
-            type="button"
-            onClick={onCreate}
-            className="h-12 w-full bg-gradient-to-l from-white to-gray-200 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] text-neutral-800 font-semibold active:translate-y-[0.5px]"
-          >
-            Create Battle
-          </button>
-        </div>
-      </div>
+      {/* Единый CTA */}
+      <CreateBattleCTA onClick={onCreate} />
     </div>
   )
 }

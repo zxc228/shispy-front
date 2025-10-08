@@ -20,7 +20,7 @@ export default function Header({
       ].join(' ')}
       aria-label="App header"
     >
-      <div className="px-2.5 py-2 rounded-t-2xl">
+  <div className="px-4 py-2 rounded-t-2xl max-w-[390px] w-full mx-auto">
         <div className="flex items-center justify-between">
           {/* LEFT: logo + caption */}
           <div className="h-11 flex items-center gap-2">

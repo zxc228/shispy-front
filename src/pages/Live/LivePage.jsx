@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import CreateBattleCTA from '../../components/common/CreateBattleCTA'
 
 export default function LivePage() {
   const navigate = useNavigate()
@@ -62,7 +63,7 @@ export default function LivePage() {
         </div>
       )}
       {/* Внутренний контейнер прокрутки контента страницы */}
-      <div className="pb-[120px] space-y-4 px-4">
+  <div className="pb-[120px] space-y-4 px-4">
         {/* Заголовок секции */}
         <SectionHeader title="Live" />
 
@@ -105,25 +106,8 @@ export default function LivePage() {
 
   {/* Удалён градиент-оверлей перед футером по запросу */}
 
-     {/* Фиксированная CTA Create Battle над таббаром */}
-      <div className="fixed left-0 right-0 bottom-[72px] w-full z-40">
-        <div className="mx-auto max-w-[390px] relative px-4">
-          {/* удалили белую «свечку» */}
-          <button
-            type="button"
-            onClick={() => navigate('/create')}
-            className="w-full h-12 px-4 py-3 rounded-xl
-                      bg-gradient-to-l from-white to-gray-200
-                      shadow-[0_8px_24px_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(206,196,189,1)]
-                      text-base font-semibold text-neutral-800
-                      [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]
-                      focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60
-                      active:translate-y-[0.5px] transition-transform duration-150 cursor-pointer"
-          >
-            Create Battle
-          </button>
-        </div>
-      </div>
+     {/* Единый CTA */}
+      <CreateBattleCTA onClick={() => navigate('/create')} />
 
 
     </div>
