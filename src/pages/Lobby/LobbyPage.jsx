@@ -4,7 +4,7 @@ import CreateBattleCTA from '../../components/common/CreateBattleCTA'
 import LobbyFilters from './LobbyFilters'
 import LobbyCard from './LobbyCard'
 
-/** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; players:string[]; giftsBonus?:number }} Room */
+/** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
 export default function LobbyPage() {
   const navigate = useNavigate()
@@ -13,11 +13,11 @@ export default function LobbyPage() {
   const [rooms, setRooms] = useState(
     /** @type {Room[]} */ (
       [
-        { id: 'r-1', host: 'BlackBeard', roomNo: '00001', minBet: 1, ton: 2.1, players: ['A', 'B'] },
-        { id: 'r-2', host: 'MaryRead', roomNo: '00002', minBet: 3, ton: 1.4, players: ['C', 'D'], giftsBonus: 10 },
-        { id: 'r-3', host: 'CalicoJack', roomNo: '00003', minBet: 7, ton: 3.3, players: ['E', 'F'] },
-        { id: 'r-4', host: 'AnneBonny', roomNo: '00004', minBet: 12, ton: 0.9, players: ['G', 'H'], giftsBonus: 5 },
-        { id: 'r-5', host: 'LongJohn', roomNo: '00005', minBet: 20, ton: 5.0, players: ['I', 'J'] },
+        { id: 'r-1', host: 'BlackBeard', roomNo: '00001', minBet: 1, ton: 2.1, gifts: ['G1', 'G2'] },
+        { id: 'r-2', host: 'MaryRead', roomNo: '00002', minBet: 3, ton: 1.4, gifts: ['G1', 'G2', 'G3', 'G4'] },
+        { id: 'r-3', host: 'CalicoJack', roomNo: '00003', minBet: 7, ton: 3.3, gifts: ['G1'] },
+        { id: 'r-4', host: 'AnneBonny', roomNo: '00004', minBet: 12, ton: 0.9, gifts: ['G1', 'G2', 'G3'], },
+        { id: 'r-5', host: 'LongJohn', roomNo: '00005', minBet: 20, ton: 5.0, gifts: ['G1', 'G2', 'G3', 'G4', 'G5'] },
       ]
     )
   )
