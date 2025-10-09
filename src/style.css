@@ -135,6 +135,9 @@
 		/* Disable outer document scrolling; the app container manages its own scroll */
 		html, body { height: 100%; overflow: hidden; }
 
+		/* Remove default user agent margin to avoid 8px gaps around the app */
+		body { margin: 0; }
+
 	/* Ensure controls inherit the app font */
 	button, input, select, textarea {
 		font: inherit;
