@@ -50,28 +50,24 @@ export default function LobbyPage() {
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
       {/* Page content (scrolls via shared <main>) */}
-  <div className="px-4 pt-2 pb-[120px]">
-        {/* promo card */}
+  <div className="px-4 pt-0 pb-[120px]">
+        {/* Competition promo (temporarily disabled)
         <div className="p-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-neutral-700 flex justify-between items-center">
           <div className="flex flex-col">
             <div className="text-black text-lg font-extrabold">Competition!</div>
             <div className="text-neutral-900 text-xs">get pirate skins from shipsy</div>
           </div>
-          {/* decorative ship made of divs */}
           <div className="relative w-20 h-12">
-            {/* mast */}
             <div className="absolute left-1/2 -translate-x-1/2 bottom-2 w-1 h-8 bg-neutral-900/80 rounded" />
-            {/* sail */}
             <div className="absolute left-[55%] bottom-6 w-6 h-4 bg-white/70 rounded-sm -skew-x-6" />
-            {/* hull */}
             <div className="absolute left-3 right-3 bottom-0 h-3 bg-neutral-900/80 rounded-b-xl" />
-            {/* waves */}
             <div className="absolute left-0 right-0 -bottom-1 h-1 bg-white/30 rounded-full blur-[1px]" />
           </div>
         </div>
+        */}
 
         {/* section title */}
-        <div className="mt-4 text-center text-white/90 text-sm tracking-wide">Lobby</div>
+  <div className="mt-2 text-left text-white/90 text-sm tracking-wide">Lobby</div>
 
         {/* filters */}
         <div className="mt-3">

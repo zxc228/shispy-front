@@ -1,4 +1,5 @@
 import React from 'react'
+import TonSvg from '../../components/icons/TonIcon.svg'
 
 export default function LobbyFilters({ active, onChange }) {
   const Chip = ({ value, children, active }) => {
@@ -18,10 +19,7 @@ export default function LobbyFilters({ active, onChange }) {
   }
 
   const TonIcon = () => (
-    <span className="relative inline-flex items-center justify-center w-3 h-3 align-middle">
-      <span className="absolute w-2.5 h-2.5 bg-sky-500" />
-      <span className="absolute w-1.5 h-1.5 bg-white" />
-    </span>
+    <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
   )
 
   return (
@@ -41,18 +39,6 @@ export default function LobbyFilters({ active, onChange }) {
         <TonIcon />
         <span className="leading-none">15+</span>
       </Chip>
-      {/* private battles key icon */}
-      <button
-        className="w-8 h-8 bg-black rounded-xl outline outline-1 outline-neutral-700 inline-flex items-center justify-center"
-        onClick={() => onChange('all')}
-        title="Private battles"
-        aria-label="Private battles"
-      >
-        {/* simple key placeholder */}
-        <span className="relative w-2.5 h-2.5">
-          <span className="absolute inset-0 bg-white" />
-        </span>
-      </button>
     </div>
   )
 }
