@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import StatusBar from './StatusBar'
+import TonSvg from '../../components/icons/TonIcon.svg'
+import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import BattleCell from './BattleCell'
 
 /** @typedef {"idle"|"selected"|"hit"|"miss"|"disabled"} CellState */
@@ -132,7 +134,7 @@ export default function BattlePage() {
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
-  <StatusBar title={title} showTimer={showTimer} onExit={() => navigate('/live')} />
+  <StatusBar title={title} showTimer={showTimer} onExit={() => navigate('/lobby')} />
 
         {/* 4x4 grid */}
         <div className="mt-3 grid grid-cols-4 gap-1 px-2.5 place-items-center">
@@ -177,28 +179,25 @@ export default function BattlePage() {
       {/* Bottom sheet for win/lose */}
       {sheet && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { navigate('/live') }} />
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { navigate('/lobby') }} />
           <div className="fixed left-0 right-0 bottom-0 z-50">
             <div className="mx-auto max-w-[390px] bg-black rounded-t-2xl outline outline-1 outline-neutral-700 p-3 flex flex-col" style={{ height: '52vh' }}>
               <div className="flex items-center justify-between">
                 <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-white', 'text-base font-semibold'].join(' ')}>
                   {sheet.variant === 'lose' ? 'You lost' : 'Your gifts:'}
                 </div>
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5">
                   <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-base font-semibold'].join(' ')}>
-                    {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)} TON` : `+${sheet.amount.toFixed(2)} TON`}
+                    {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
                   </div>
-                  <span className="relative w-5 h-5">
-                    <span className="absolute left-0 top-0 w-3 h-3 bg-sky-500" />
-                    <span className="absolute left-2 top-2 w-2 h-2 bg-white" />
-                  </span>
+                  <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                 </div>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2 flex-1 overflow-y-auto pr-1">
                 {Array.from({ length: 9 }, (_, i) => (
-                  <div key={i} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] outline outline-1 outline-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
-                    <div className="w-8 h-8 bg-white/90 rounded-sm" />
+                  <div key={i} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
+                    <img src={EmptyGiftSvg} alt="Gift" className="w-10 h-10 opacity-80" />
                   </div>
                 ))}
               </div>
@@ -206,7 +205,7 @@ export default function BattlePage() {
               <div className="mt-4">
                 <button
                   type="button"
-                  onClick={() => { navigate('/live') }}
+                  onClick={() => { navigate('/lobby') }}
                   className="w-full h-12 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
                 >
                   Back to Home

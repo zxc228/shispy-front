@@ -14,10 +14,10 @@ export default function StatusBar({ title, showTimer, onExit }) {
             <button
               type="button"
               onClick={onExit}
-              className="h-8 px-3 rounded-full bg-neutral-800 text-white/90 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
-              aria-label="Exit to Home"
+              className="h-8 px-2.5 rounded-full bg-neutral-800 text-white/90 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+              aria-label="Concede and exit"
             >
-              Exit
+              Concede
             </button>
           )}
         </div>
