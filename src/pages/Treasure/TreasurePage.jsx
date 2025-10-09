@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import EmptyGiftSvg from "../../components/icons/EmptyGift.svg";
+import TonSvg from "../../components/icons/TonIcon.svg";
 
 export default function TreasurePage() {
   // 👉 сменой массива на [] проверишь «пустое» состояние инвентаря
@@ -133,7 +135,7 @@ function MyTreasureCard({ title }) {
     <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)]">
       <div className="rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
                       flex flex-col items-center justify-center px-2 py-3">
-        <div className="w-8 h-8 bg-white/90 rounded-sm" />
+        <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
         <p className="mt-2 text-[13px] font-medium text-white">{title}</p>
       </div>
     </div>
@@ -160,22 +162,21 @@ function StoreCard({
     >
       {/* Контент карточки */}
       <div className="absolute inset-0 grid place-items-center">
-        <div className="w-8 h-8 bg-white/90 rounded-sm" />
+        <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
         <p className="sr-only">{title}</p>
       </div>
 
       {/* Бейдж цены снизу слева, как в фигме с тр-скруглением */}
       <div
         className={[
-          "absolute left-[1px] bottom-[6px] pl-2 pr-3 py-1 rounded-tr-3xl inline-flex items-center gap-1",
+          "absolute left-[1px] bottom-[6px] pl-2 pr-2 py-1 rounded-tr-3xl inline-flex items-center gap-1.5",
           selected
             ? "bg-gradient-to-b from-orange-400 to-amber-700"
             : "bg-neutral-700",
         ].join(" ")}
       >
         <span className="text-neutral-50 text-sm font-normal">{priceTon.toFixed(2)}</span>
-        <span className="w-3.5 h-3.5 bg-sky-500 rounded-sm" />
-        <span className="w-1.5 h-1.5 bg-white rounded-sm" />
+        <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
       </div>
     </button>
   );
@@ -216,14 +217,13 @@ function BuyBar({
   if (!visible) return null;
   return (
     <div className="fixed left-0 right-0 bottom-[72px] px-2.5">
-      {/* glow под кнопкой */}
-      <div className="mx-auto max-w-md h-12 -mb-1 rounded-xl bg-gradient-to-b from-orange-400/75 to-amber-700/75 blur-[2.5px]" />
       <button
         onClick={onClick}
         className="mx-auto max-w-md w-full h-12 px-4 py-3 rounded-xl 
                    bg-gradient-to-b from-orange-400 to-amber-700 
-                   shadow-[inset_0_-1px_0_rgba(230,141,74,1)]
-                   text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,.25)]
+                   shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)]
+                   text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60
                    active:translate-y-[0.5px]"
       >
         {label}
