@@ -118,9 +118,6 @@ export default function ProfilePage() {
           <div className="h-10 p-3 bg-black rounded-xl border border-neutral-700/60 flex items-center">
             <div className="text-white text-sm font-bold font-sans">Lose</div>
           </div>
-          <div className="h-10 p-3 bg-black rounded-xl border border-neutral-700/60 flex items-center">
-            <div className="text-white text-sm font-bold font-sans">More bid</div>
-          </div>
         </div>
 
         {/* items */}
