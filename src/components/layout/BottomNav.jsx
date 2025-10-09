@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import MapIcon from '../icons/MapIcon.svg';
 import MapIconActivated from '../icons/MapIcon_activated.svg';
 import LiveIcon from '../icons/LiveIcon.svg';
@@ -20,6 +20,7 @@ const tabs = [
 
 
 export default function BottomNav() {
+  const { pathname } = useLocation();
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm"
@@ -31,12 +32,14 @@ export default function BottomNav() {
           <li key={t.to} className="h-12 inline-flex flex-col items-center justify-center">
             <NavLink
               to={t.to}
-              className={({ isActive }) =>
-                [
+              className={({ isActive }) => {
+                const lobbyForcedActive = t.to === '/lobby' && (pathname.startsWith('/create') || pathname.startsWith('/join'));
+                const active = isActive || lobbyForcedActive;
+                return [
                   'group w-10 h-12 inline-flex flex-col items-center justify-start gap-1',
-                  isActive ? 'text-orange-400 active' : 'text-white/50'
-                ].join(' ')
-              }
+                  active ? 'text-orange-400 active' : 'text-white/50'
+                ].join(' ');
+              }}
             >
               <div className="flex flex-col items-center justify-start gap-1">
                 <img

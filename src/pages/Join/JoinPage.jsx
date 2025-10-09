@@ -56,9 +56,9 @@ export default function JoinPage() {
   }
 
   return (
-    <div className="h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white flex flex-col">
       {/* scroll area */}
-      <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2 pb-4 [scrollbar-gutter:stable_both-edges]">
+      <main className="flex-1 overflow-y-auto px-2.5 pt-2 pb-[calc(152px+env(safe-area-inset-bottom))] [scrollbar-gutter:stable_both-edges]">
         {view === 'empty' ? (
           <EmptyInventoryBlock
             onAddTreasure={() => {
@@ -79,7 +79,7 @@ export default function JoinPage() {
             />
           </div>
         )}
-      </div>
+      </main>
 
       {/* footer with Join button */}
       <SummaryFooter
@@ -93,7 +93,7 @@ export default function JoinPage() {
 
 function EmptyInventoryBlock({ onAddTreasure }) {
   return (
-    <div className="h-full min-h:[480px] flex items-center justify-center">
+    <div className="h-full min-h-[480px] flex items-center justify-center">
       <div className="w-80 mx-auto flex flex-col items-center gap-4">
         <div className="text-7xl">😔</div>
         <div className="text-center">
@@ -200,9 +200,9 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
 function SummaryFooter({ selectedCount, totalTon, onJoin }) {
   const disabled = selectedCount === 0
   return (
-  <div className="fixed left-0 right-0 bottom-[calc(72px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
+  <div className="fixed left-0 right-0 bottom-[calc(56px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
-        <div className="rounded-2xl outline outline-1 outline-offset-[-1px] outline-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
+        <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
           <div className="flex flex-col items-center gap-1.5 text-center">
             <div className="text-neutral-700 text-sm font-medium">Selected:</div>
             <div className="inline-flex items-center gap-2">

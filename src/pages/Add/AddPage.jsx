@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import TonSvg from '../../components/icons/TonIcon.svg'
 
 export default function AddPage() {
   const [amount, setAmount] = useState('')
@@ -27,9 +28,8 @@ export default function AddPage() {
     <div className="mx-auto max-w-[390px] px-2.5 py-4 space-y-3">
       <div className="w-full p-1 rounded-xl">
         <div className="w-full h-12 p-3 bg-black rounded-xl outline outline-1 outline-offset-[-1px] outline-neutral-50/25 inline-flex justify-start items-center gap-2.5">
-          {/* TON icon (as in design) */}
-          <div className="w-3 h-3 bg-sky-500" />
-          <div className="w-1.5 h-1.5 bg-white" />
+          {/* TON icon */}
+          <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
           {/* Amount input (styled like the design text) */}
           <input
             value={amount}
@@ -37,7 +37,7 @@ export default function AddPage() {
             inputMode="decimal"
             placeholder="0.00"
             aria-label="Amount"
-            className="flex-1 bg-transparent outline-none text-neutral-50 text-base font-semibold font-['SF_Pro_Display'] [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)] placeholder:text-neutral-50/30"
+            className="flex-1 bg-transparent outline-none text-neutral-50 text-base font-semibold font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)] placeholder:text-neutral-50/30"
           />
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function AddPage() {
         }`}
         aria-label="Top up your balance"
       >
-        <span className={`${valid ? 'text-white' : 'text-neutral-800'} text-base font-semibold font-['SF_Pro_Display'] ${valid ? '[text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]' : ''}`}>
+        <span className={`${valid ? 'text-white' : 'text-neutral-800'} text-base font-semibold font-sans ${valid ? '[text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]' : ''}`}>
           Top up your balance
         </span>
       </button>
