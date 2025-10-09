@@ -90,8 +90,8 @@ export default function PromoCodeSection({
       <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-offset-[-1px] outline-neutral-700 flex flex-col gap-3 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <div className="text-neutral-50 text-base font-semibold font-['SF_Pro_Display']">Promo code</div>
-          <div className="text-xs font-normal font-['SF_Pro_Display']">
+          <div className="text-neutral-50 text-base font-semibold font-sans">Promo code</div>
+          <div className="text-xs font-normal font-sans">
             <span className="text-orange-400">Follow the</span>
             <span className="text-neutral-700"> </span>
             <span className="text-orange-400">telegram channel</span>
@@ -111,7 +111,7 @@ export default function PromoCodeSection({
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder="ENTER CODE"
-              className={`w-full bg-transparent outline-none placeholder:text-neutral-50/25 text-neutral-50/90 text-base font-semibold font-['SF_Pro_Display'] tracking-[0.08em] uppercase ${status === 'loading' ? 'opacity-50' : ''}`}
+              className={`w-full bg-transparent outline-none placeholder:text-neutral-50/25 text-neutral-50/90 text-base font-semibold font-sans tracking-[0.08em] uppercase ${status === 'loading' ? 'opacity-50' : ''}`}
               disabled={status === 'loading' || status === 'success'}
               aria-label="Promo code"
             />
@@ -129,7 +129,7 @@ export default function PromoCodeSection({
               {status === 'loading' ? (
                 <Spinner size={18} />
               ) : (
-                <span className="text-neutral-800 text-base font-semibold font-['SF_Pro_Display'] [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
+                <span className="text-neutral-800 text-base font-semibold font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
                   Activate
                 </span>
               )}
@@ -140,29 +140,26 @@ export default function PromoCodeSection({
               className="flex-1 h-12 pl-4 pr-3 py-3 bg-black rounded-xl outline outline-1 outline-offset-[-1px] outline-neutral-700 inline-flex items-center justify-center gap-1"
               aria-label="Back"
             >
-              <span className="text-neutral-100 text-base font-semibold font-['SF_Pro_Display']">Back</span>
+              <span className="text-neutral-100 text-base font-semibold font-sans">Back</span>
             </button>
           )}
         </div>
 
-        {/* Feedback row */}
+        {/* Feedback row (no TON reward display) */}
         <div className="min-h-6">
           {status === 'idle' && (
-            <div className="text-neutral-700 text-xs font-normal font-['SF_Pro_Display']">Reward: 0.00 TON</div>
+            <div className="text-neutral-700 text-xs font-normal font-sans">Enter a promo code</div>
           )}
           {status === 'typing' && (
-            <div className={`text-xs font-normal font-['SF_Pro_Display'] ${isValid ? 'text-green-500' : 'text-neutral-700'}`}>
+            <div className={`text-xs font-normal font-sans ${isValid ? 'text-green-500' : 'text-neutral-700'}`}>
               {isValid ? 'Code looks good' : 'Use 4–20 characters A–Z 0–9'}
             </div>
           )}
           {status === 'error' && (
-            <div className="text-red-500 text-xs font-normal font-['SF_Pro_Display']">{message || 'Invalid promo code'}</div>
+            <div className="text-red-500 text-xs font-normal font-sans">{message || 'Invalid promo code'}</div>
           )}
           {status === 'success' && (
-            <div className="inline-flex items-center gap-1">
-              <span className="text-green-500 text-sm font-semibold font-['SF_Pro_Display']">+{reward.toFixed(2)}</span>
-              <TonIcon size={14} />
-            </div>
+            <div className="text-green-500 text-sm font-semibold font-sans">Promo applied!</div>
           )}
         </div>
 
@@ -170,12 +167,8 @@ export default function PromoCodeSection({
         {status === 'success' && (
           <div className="w-full p-3 bg-neutral-900 rounded-xl outline outline-1 outline-offset-[-1px] outline-green-600 flex items-center justify-between">
             <div className="flex flex-col">
-              <div className="text-neutral-50 text-sm font-semibold font-['SF_Pro_Display']">Promo applied</div>
-              <div className="text-neutral-400 text-xs font-normal font-['SF_Pro_Display']">Code {code}</div>
-            </div>
-            <div className="inline-flex items-center gap-1">
-              <span className="text-green-500 text-sm font-semibold font-['SF_Pro_Display']">+{reward.toFixed(2)}</span>
-              <TonIcon size={14} />
+              <div className="text-neutral-50 text-sm font-semibold font-sans">Promo applied</div>
+              <div className="text-neutral-400 text-xs font-normal font-sans">Code {code}</div>
             </div>
           </div>
         )}
