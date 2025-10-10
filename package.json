@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:tunnel": "vite --mode tunnel",
     "build": "vite build",
     "preview": "vite preview",
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
-    "dev:twa": "concurrently \"npm:dev\" \"npm:tunnel\""
+    "dev:twa": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\""
   },
   "dependencies": {
+    "axios": "^1.7.9",
     "@tailwindcss/vite": "^4.1.14",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

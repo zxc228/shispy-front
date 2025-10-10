@@ -1,20 +1,62 @@
+import React, { useEffect, useState } from 'react'
 import PromoCodeSection from './PromoCodeSection'
+import { useTelegram } from '../../providers/TelegramProvider'
 import ProfileSvg from '../../components/icons/ProfileIcon.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
+import { getMe, getProfile } from '../../shared/api/users.api'
+import { logger } from '../../shared/logger'
 
 export default function ProfilePage() {
+  const { user, isInTelegram } = useTelegram()
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // Derived data from Telegram user
+  const displayName = user?.username
+    ? `@${user.username}`
+    : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || '—'
+  const avatarSrc = user?.photo_url || EmptyPersonSvg
+
+  // Load profile data from backend (authorized by token)
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        setLoading(true)
+        const [me, prof] = await Promise.all([
+          getMe().catch((e) => { logger.warn('getMe failed', e); return null }),
+          getProfile(),
+        ])
+        if (cancelled) return
+        setProfile(prof)
+      } catch (e) {
+        if (cancelled) return
+        setError('Не удалось загрузить профиль')
+        logger.error('ProfilePage: getProfile error', e)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <div className="mx-auto max-w-[390px] space-y-3">
+
+      {/* AUTH STATUS removed by design request */}
 
       {/* AVATAR + NAME / WALLET */}
       <section className="flex flex-col items-center gap-2 mt-1">
         <div className="w-24 h-24 relative rounded-3xl">
           <span className="w-14 h-14 left-[48px] top-0 absolute rounded-3xl outline outline-2 outline-offset-[-1.04px] outline-orange-400 blur-[5.21px]" />
           <img
-            className="w-24 h-24 left-0 top-0 absolute rounded-3xl border-2 border-zinc-500 object-contain bg-neutral-200"
-            src={EmptyPersonSvg}
+            className="w-24 h-24 left-0 top-0 absolute rounded-3xl border-2 border-zinc-500 object-cover bg-neutral-200"
+            src={avatarSrc}
             alt="avatar"
+            referrerPolicy="no-referrer"
           />
           <span className="w-14 h-14 left-[49px] -top-px absolute overflow-hidden">
             <span className="w-24 h-24 -left-[48px] top-0 absolute rounded-3xl border-4 border-orange-400" />
@@ -25,7 +67,7 @@ export default function ProfilePage() {
 
         <div className="w-full flex flex-col items-center gap-1">
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
-            Maks_movv.dsgn1324134
+            {displayName}
           </div>
           <div className="text-center text-neutral-700 text-xs font-normal font-sans">
             КОШЕЛЕК1234
@@ -33,42 +75,40 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* XP + LEVEL */}
+      {/* STATS SUMMARY (from backend) */}
       <section className="w-full px-2.5">
         <div className="w-full flex items-center justify-between">
-          <div className="text-neutral-700 text-xs font-normal font-sans">100/1000 xp</div>
+          <div className="text-neutral-700 text-xs font-normal font-sans">
+            Игр: {profile?.count_games ?? (loading ? '…' : '—')}
+          </div>
           <div className="flex items-center gap-[5px]">
-            <div className="text-neutral-700 text-xs font-normal font-sans">Level 22</div>
+            <div className="text-neutral-700 text-xs font-normal font-sans">
+              Побед: {profile?.percantage ?? (loading ? '…' : 0)}%
+            </div>
             <div className="px-1 py-0.5 bg-gradient-to-b from-orange-400 to-amber-700 rounded flex items-center">
-              <div className="text-white text-xs font-normal font-sans">Pro</div>
+              <div className="text-white text-xs font-normal font-sans">{profile?.value ?? 0} TON</div>
             </div>
           </div>
         </div>
-        <div className="mt-1 h-2 relative bg-neutral-800 rounded-full outline outline-1 outline-neutral-700 overflow-hidden">
-          <div className="w-24 h-2 px-1 py-0.5 left-0 top-0 absolute bg-gradient-to-b from-orange-400 to-amber-700 rounded-[100px]" />
-        </div>
       </section>
 
-      {/* STATS (3 CARDS) — made more compact */}
+      {/* STATS (3 CARDS) — from backend */}
       <section className="w-full px-2.5 grid grid-cols-3 gap-1.5">
-        {/* Win games */}
         <div className="p-2 relative bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex flex-col justify-center gap-1 overflow-hidden">
           <div className="inline-flex items-start gap-1">
-            <div className="text-orange-400 text-lg font-medium font-sans">87 %</div>
+            <div className="text-orange-400 text-lg font-medium font-sans">{profile?.percantage ?? 0}%</div>
           </div>
           <div className="text-white/50 text-xs font-normal font-sans">Win games</div>
         </div>
-        {/* All games */}
         <div className="p-2 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex flex-col justify-center gap-1 overflow-hidden">
           <div className="flex items-start gap-1">
-            <div className="text-neutral-50 text-lg font-medium font-sans">20</div>
+            <div className="text-neutral-50 text-lg font-medium font-sans">{profile?.count_games ?? 0}</div>
           </div>
           <div className="text-white/50 text-xs font-normal font-sans">All games</div>
         </div>
-        {/* Wons TON */}
         <div className="p-2 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex flex-col justify-center gap-1 overflow-hidden">
           <div className="inline-flex items-center gap-1.5">
-            <div className="text-neutral-50 text-lg font-medium font-sans">1.00</div>
+            <div className="text-neutral-50 text-lg font-medium font-sans">{Number(profile?.value ?? 0).toFixed(2)}</div>
             <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain translate-y-[0.5px]" />
           </div>
           <div className="text-white/50 text-xs font-normal font-sans">Wons TON</div>
@@ -99,7 +139,7 @@ export default function ProfilePage() {
         </section>
       )}
 
-      {/* GAME HISTORY */}
+      {/* GAME HISTORY (from backend) */}
   <section className="w-full px-2.5">
     <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 space-y-2">
       <div className="text-neutral-50 text-base font-semibold font-sans">Game history</div>
@@ -120,55 +160,38 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* items */}
+        {/* items from API */}
         <div className="space-y-2">
-          {/* Win */}
-          <div className="w-full p-3 bg-black rounded-xl border border-green-500 flex justify-between items-end overflow-hidden">
-            <div className="inline-flex flex-col justify-end gap-1">
-              <div className="inline-flex items-center gap-1">
-                <img className="w-8 h-8 rounded-lg" src="https://placehold.co/33x33" alt="opponent" />
-                <div className="inline-flex flex-col justify-center gap-0.5">
-                  <div className="text-white text-sm font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
-                    Maks_movv.dsgn1324134
-                  </div>
-                  <div className="text-zinc-100/25 text-[10px] font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
-                    Jan 13, 2025
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-2 bg-neutral-800 rounded-[10px]">
-              <div className="inline-flex items-center gap-1">
-                <div className="text-green-500 text-sm font-semibold font-sans">+2.10</div>
-                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
-              </div>
-            </div>
-          </div>
-
-          {/* Loss */}
-          {[1,2,3].map((i) => (
-            <div key={i} className="w-full p-3 bg-black rounded-xl border border-red-700 flex justify-between items-end overflow-hidden">
-              <div className="inline-flex flex-col justify-end gap-1">
-                <div className="inline-flex items-center gap-1">
-                  <img className="w-8 h-8 rounded-lg" src="https://placehold.co/33x33" alt="opponent" />
-                  <div className="inline-flex flex-col justify-center gap-0.5">
-                    <div className="text-white text-sm font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
-                      Maks_movv.dsgn1324134
+          {Array.isArray(profile?.history) && profile.history.length > 0 ? (
+            profile.history.filter(Boolean).map((h, i) => {
+              const win = Number(h?.winner) === 1
+              const date = h?.datetime || ''
+              const amount = Number(h?.value ?? 0)
+              const enemyPhoto = h?.photo_url_enemy || 'https://placehold.co/33x33'
+              const enemyName = h?.username_enemy || 'Opponent'
+              return (
+                <div key={i} className={`w-full p-3 bg-black rounded-xl border ${win ? 'border-green-500' : 'border-red-700'} flex justify-between items-end overflow-hidden`}>
+                  <div className="inline-flex flex-col justify-end gap-1">
+                    <div className="inline-flex items-center gap-1">
+                      <img className="w-8 h-8 rounded-lg object-cover" src={enemyPhoto} alt="opponent" referrerPolicy="no-referrer" />
+                      <div className="inline-flex flex-col justify-center gap-0.5">
+                        <div className="text-white text-sm font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">{enemyName}</div>
+                        <div className="text-zinc-100/25 text-[10px] font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">{date}</div>
+                      </div>
                     </div>
-                    <div className="text-zinc-100/25 text-[10px] font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">
-                      Jan 13, 2025
+                  </div>
+                  <div className="p-2 bg-neutral-800 rounded-[10px]">
+                    <div className="inline-flex items-center gap-1">
+                      <div className={`${win ? 'text-green-500' : 'text-red-700'} text-sm font-semibold font-sans`}>{win ? '+' : '-'}{amount.toFixed(2)}</div>
+                      <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="p-2 bg-neutral-800 rounded-[10px]">
-                <div className="inline-flex items-center gap-1">
-                  <div className="text-red-700 text-sm font-semibold font-sans">-2.10</div>
-                  <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
-                </div>
-              </div>
-            </div>
-          ))}
+              )
+            })
+          ) : (
+            <div className="text-white/40 text-xs">{loading ? 'Загрузка…' : 'Нет истории игр'}</div>
+          )}
         </div>
     </div>
   </section>
