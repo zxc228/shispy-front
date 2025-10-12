@@ -40,6 +40,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/wallet': {
+          target: apiBase,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   }

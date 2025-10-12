@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import { createInvoice } from '../../shared/api/wallet.api'
+import { logger } from '../../shared/logger'
 
 export default function AddPage() {
   const [amount, setAmount] = useState('')
@@ -22,7 +24,33 @@ export default function AddPage() {
     setAmount(v)
   }
 
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState('')
   const valid = amount !== '' && !isNaN(Number(amount)) && Number(amount) > 0
+
+  const onTopUp = async () => {
+    if (!valid || busy) return
+    try {
+      setBusy(true)
+      setStatus('Создание счёта…')
+      const amt = Number(amount)
+      const res = await createInvoice(amt)
+      const link = res?.link
+      if (typeof link === 'string' && link) {
+        // Открываем в новой вкладке/встроенном браузере Telegram
+        window.open(link, '_blank', 'noopener,noreferrer')
+        setStatus('Ссылка на оплату открыта')
+      } else {
+        setStatus('Ссылка на оплату не получена')
+      }
+    } catch (e) {
+      logger?.error?.('createInvoice error', e)
+      setStatus('Ошибка при создании счёта')
+    } finally {
+      setBusy(false)
+      setTimeout(() => setStatus(''), 2500)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-[390px] px-2.5 py-4 space-y-3">
@@ -45,16 +73,21 @@ export default function AddPage() {
       {/* CTA button: gray when disabled, orange when valid */}
       <button
         type="button"
-        disabled={!valid}
+        disabled={!valid || busy}
         className={`w-full h-12 px-4 py-3 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] inline-flex items-center justify-center gap-1 transition-opacity ${
-          valid ? 'bg-gradient-to-b from-orange-400 to-amber-700' : 'bg-neutral-300 text-neutral-700 cursor-not-allowed'
+          valid && !busy ? 'bg-gradient-to-b from-orange-400 to-amber-700' : 'bg-neutral-300 text-neutral-700 cursor-not-allowed'
         }`}
         aria-label="Top up your balance"
+        onClick={onTopUp}
       >
-        <span className={`${valid ? 'text-white' : 'text-neutral-800'} text-base font-semibold font-sans ${valid ? '[text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]' : ''}`}>
-          Top up your balance
+        <span className={`${valid && !busy ? 'text-white' : 'text-neutral-800'} text-base font-semibold font-sans ${valid && !busy ? '[text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]' : ''}`}>
+          {busy ? 'Processing…' : 'Top up your balance'}
         </span>
       </button>
+
+      {status && (
+        <div className="text-center text-white/70 text-xs">{status}</div>
+      )}
     </div>
   )
 }

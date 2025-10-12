@@ -1,18 +1,41 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EmptyGiftSvg from "../../components/icons/EmptyGift.svg";
 import TonSvg from "../../components/icons/TonIcon.svg";
+import { getGifts } from "../../shared/api/lobby.api";
 
 export default function TreasurePage() {
-  // 👉 сменой массива на [] проверишь «пустое» состояние инвентаря
-  const myItems = useMemo(
-    () =>
-      
-      // Array.from({ length: 9 }, (_, i) => ({
-      //   id: i + 1,
-      //   title: "Treasure",
-      // })),
-    []
-  );
+  // My gifts loaded from backend
+  const [myItems, setMyItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        setLoading(true);
+        const res = await getGifts();
+        if (cancelled) return;
+        const gifts = Array.isArray(res?.gifts) ? res.gifts : [];
+        // map gifts to UI items
+        setMyItems(
+          gifts.map((g, idx) => ({
+            id: g?.gid ?? idx,
+            title: g?.slug || "Treasure",
+            priceTon: Number(g?.value ?? 0),
+            photo: g?.photo || null,
+          }))
+        );
+      } catch (e) {
+        if (cancelled) return;
+        setError("Не удалось загрузить подарки");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => { cancelled = true };
+  }, []);
 
   // 👉 магазинные предметы (одинаковые карточки с ценником)
   const storeItems = useMemo(
@@ -44,7 +67,7 @@ export default function TreasurePage() {
             {/* Сетка инвентаря */}
             <Grid3>
               {myItems.map((it) => (
-                <MyTreasureCard key={it.id} title={it.title} />
+                <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
               ))}
             </Grid3>
           </>
@@ -53,30 +76,10 @@ export default function TreasurePage() {
         )
       ) : (
         <>
-          {/* Сетка магазина Shipsy с выбором */}
-          <Grid3>
-            {storeItems.map((it) => (
-              <StoreCard
-                key={it.id}
-                title={it.title}
-                priceTon={it.priceTon}
-                selected={selectedStoreId === it.id}
-                onSelect={() =>
-                  setSelectedStoreId((prev) => (prev === it.id ? null : it.id))
-                }
-              />
-            ))}
-          </Grid3>
-
-          {/* Кнопка покупки — как в макете, появляется когда есть выбор */}
-          <BuyBar
-            visible={canBuy}
-            label={`Buy for ${selectedItem?.priceTon.toFixed(2)} TON`}
-            onClick={() => {
-              // TODO: вызов покупки selectedItem
-              // console.log("Buy", selectedItem);
-            }}
-          />
+          {/* Shipsy Treasures — пока в разработке */}
+          <div className="h-[320px] rounded-2xl border border-neutral-700 grid place-items-center text-white/70">
+            Shipsy Treasures — в разработке
+          </div>
         </>
       )}
     </main>
@@ -130,13 +133,23 @@ function Grid3({ children }) {
 /* --------- Cards --------- */
 
 // Inventory card (простая заглушка со свето-рамкой)
-function MyTreasureCard({ title }) {
+function MyTreasureCard({ title, photo, priceTon }) {
   return (
     <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)]">
       <div className="rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
                       flex flex-col items-center justify-center px-2 py-3">
-        <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
+        <img
+          src={photo || EmptyGiftSvg}
+          alt="Treasure"
+          className="w-10 h-10 opacity-80 object-contain"
+          referrerPolicy="no-referrer"
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = EmptyGiftSvg; }}
+        />
         <p className="mt-2 text-[13px] font-medium text-white">{title}</p>
+        <div className="mt-1 text-xs text-white/70 inline-flex items-center gap-1">
+          <span>{Number(priceTon ?? 0).toFixed(2)}</span>
+          <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
+        </div>
       </div>
     </div>
   );

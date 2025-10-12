@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import PromoCodeSection from './PromoCodeSection'
+// import PromoCodeSection from './PromoCodeSection'
 import { useTelegram } from '../../providers/TelegramProvider'
 import ProfileSvg from '../../components/icons/ProfileIcon.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [walletStatus, setWalletStatus] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
 
   // Derived data from Telegram user
@@ -104,9 +105,36 @@ export default function ProfilePage() {
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
-          <div className="text-center text-neutral-700 text-xs font-normal font-sans">
-            КОШЕЛЕК1234
+          <div className="text-center text-neutral-700 text-xs font-normal font-sans">КОШЕЛЕК1234</div>
+          <div className="mt-2">
+            <button
+              type="button"
+              className="h-10 px-4 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-sm font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
+              onClick={async () => {
+                const w = window.prompt('Введите адрес кошелька TON')
+                if (!w) return
+                try {
+                  setWalletStatus('Отправка…')
+                  const res = await setWallet(w)
+                  if (res?.status) {
+                    setWalletStatus('Кошелёк сохранён')
+                  } else {
+                    setWalletStatus('Не удалось сохранить')
+                  }
+                } catch (e) {
+                  logger.error('setWallet error', e)
+                  setWalletStatus('Ошибка при сохранении')
+                } finally {
+                  setTimeout(() => setWalletStatus(''), 2000)
+                }
+              }}
+            >
+              Add wallet
+            </button>
           </div>
+          {walletStatus && (
+            <div className="mt-1 text-xs text-white/70">{walletStatus}</div>
+          )}
         </div>
       </section>
 
@@ -152,8 +180,12 @@ export default function ProfilePage() {
 
       {/* REFERRAL — removed */}
 
-      {/* PROMO CODE */}
-      <PromoCodeSection />
+      {/* PROMO CODE — временно скрыто */}
+      {false && (
+        <div>
+          {/* <PromoCodeSection /> */}
+        </div>
+      )}
 
       {/* STREAMER MODE — commented out */}
       {false && (
