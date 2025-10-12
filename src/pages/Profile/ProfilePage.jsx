@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import PromoCodeSection from './PromoCodeSection'
 import { useTelegram } from '../../providers/TelegramProvider'
 import ProfileSvg from '../../components/icons/ProfileIcon.svg'
@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
 
   // Derived data from Telegram user
   const displayName = user?.username
@@ -41,6 +42,38 @@ export default function ProfilePage() {
     return () => { cancelled = true }
   }, [authDone])
 
+  // Derived: filtered/sorted history by active tab
+  const displayedHistory = useMemo(() => {
+    const items = Array.isArray(profile?.history) ? profile.history.filter(Boolean) : []
+    // Decorate with parsed date and win flag/value
+    const normalized = items.map((h) => {
+      const raw = Number(h?.value ?? 0)
+      const isWin = Number(h?.winner) === 1 || raw > 0
+      const dt = h?.datetime ? new Date(h.datetime) : null
+      return { ...h, _raw: raw, _isWin: isWin, _date: dt }
+    })
+
+    switch (activeTab) {
+      case 'wins':
+        return normalized.filter((h) => h._isWin)
+      case 'lose':
+        return normalized.filter((h) => !h._isWin)
+      case 'last':
+        return normalized.slice().sort((a, b) => {
+          const ta = a._date ? a._date.getTime() : 0
+          const tb = b._date ? b._date.getTime() : 0
+          return ta - tb // old -> new
+        })
+      case 'new':
+      default:
+        return normalized.slice().sort((a, b) => {
+          const ta = a._date ? a._date.getTime() : 0
+          const tb = b._date ? b._date.getTime() : 0
+          return tb - ta // new -> old
+        })
+    }
+  }, [profile?.history, activeTab])
+
   return (
     <div className="mx-auto max-w-[390px] space-y-3">
 
@@ -55,6 +88,10 @@ export default function ProfilePage() {
             src={avatarSrc}
             alt="avatar"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.onerror = null
+              e.currentTarget.src = EmptyPersonSvg
+            }}
           />
           <span className="w-14 h-14 left-[49px] -top-px absolute overflow-hidden">
             <span className="w-24 h-24 -left-[48px] top-0 absolute rounded-3xl border-4 border-orange-400" />
@@ -138,40 +175,59 @@ export default function ProfilePage() {
       )}
 
       {/* GAME HISTORY (from backend) */}
-  <section className="w-full px-2.5">
+      <section className="w-full px-2.5">
     <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 space-y-2">
       <div className="text-neutral-50 text-base font-semibold font-sans">Game history</div>
 
-        {/* tabs (визуально) */}
+        {/* tabs */}
         <div className="flex gap-1.5">
-          <div className="h-10 p-3 bg-neutral-700 rounded-xl flex items-center">
-            <div className="text-white text-sm font-bold font-sans">New</div>
-          </div>
-          <div className="h-10 p-3 bg-black rounded-xl border border-neutral-700/60 flex items-center">
-            <div className="text-white text-sm font-bold font-sans">Last</div>
-          </div>
-          <div className="h-10 p-3 bg-black rounded-xl border border-neutral-700/60 flex items-center">
-            <div className="text-white text-sm font-bold font-sans">Wins</div>
-          </div>
-          <div className="h-10 p-3 bg-black rounded-xl border border-neutral-700/60 flex items-center">
-            <div className="text-white text-sm font-bold font-sans">Lose</div>
-          </div>
+          {[
+            { key: 'new', label: 'New' },
+            { key: 'last', label: 'Last' },
+            { key: 'wins', label: 'Wins' },
+            { key: 'lose', label: 'Lose' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key
+            const base = 'h-10 px-3 bg-black rounded-xl border flex items-center cursor-pointer select-none'
+            const cls = isActive
+              ? 'bg-neutral-700 border-neutral-700 text-white'
+              : 'border-neutral-700/60 text-white'
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={`${base} ${cls}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <div className="text-sm font-bold font-sans">{tab.label}</div>
+              </button>
+            )
+          })}
         </div>
 
         {/* items from API */}
         <div className="space-y-2">
-          {Array.isArray(profile?.history) && profile.history.length > 0 ? (
-            profile.history.filter(Boolean).map((h, i) => {
-              const win = Number(h?.winner) === 1
+          {displayedHistory.length > 0 ? (
+            displayedHistory.map((h, i) => {
+              const win = !!h._isWin
               const date = h?.datetime || ''
-              const amount = Number(h?.value ?? 0)
-              const enemyPhoto = h?.photo_url_enemy || 'https://placehold.co/33x33'
+              const amountAbs = Math.abs(Number(h?._raw ?? h?.value ?? 0))
+              const enemyPhoto = h?.photo_url_enemy || EmptyPersonSvg
               const enemyName = h?.username_enemy || 'Opponent'
               return (
                 <div key={i} className={`w-full p-3 bg-black rounded-xl border ${win ? 'border-green-500' : 'border-red-700'} flex justify-between items-end overflow-hidden`}>
                   <div className="inline-flex flex-col justify-end gap-1">
                     <div className="inline-flex items-center gap-1">
-                      <img className="w-8 h-8 rounded-lg object-cover" src={enemyPhoto} alt="opponent" referrerPolicy="no-referrer" />
+                      <img
+                        className="w-8 h-8 rounded-lg object-cover"
+                        src={enemyPhoto}
+                        alt="opponent"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null
+                          e.currentTarget.src = EmptyPersonSvg
+                        }}
+                      />
                       <div className="inline-flex flex-col justify-center gap-0.5">
                         <div className="text-white text-sm font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">{enemyName}</div>
                         <div className="text-zinc-100/25 text-[10px] font-light font-sans [text-shadow:_0px_1px_25px_rgb(0_0_0_/_0.25)]">{date}</div>
@@ -180,7 +236,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="p-2 bg-neutral-800 rounded-[10px]">
                     <div className="inline-flex items-center gap-1">
-                      <div className={`${win ? 'text-green-500' : 'text-red-700'} text-sm font-semibold font-sans`}>{win ? '+' : '-'}{amount.toFixed(2)}</div>
+                      <div className={`${win ? 'text-green-500' : 'text-red-700'} text-sm font-semibold font-sans`}>{win ? '+' : '-'}{amountAbs.toFixed(2)}</div>
                       <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                     </div>
                   </div>
