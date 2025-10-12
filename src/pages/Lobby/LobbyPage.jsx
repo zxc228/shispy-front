@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CreateBattleCTA from '../../components/common/CreateBattleCTA'
 import LobbyFilters from './LobbyFilters'
 import LobbyCard from './LobbyCard'
+import { getQueue } from '../../shared/api/lobby.api'
+import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
+import { logger } from '../../shared/logger'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
@@ -10,17 +13,46 @@ export default function LobbyPage() {
   const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | '1-5' | '5-15' | '15+'
   /** @type {[Room[], Function]} */
-  const [rooms, setRooms] = useState(
-    /** @type {Room[]} */ (
-      [
-        { id: 'r-1', host: 'BlackBeard', roomNo: '00001', minBet: 1, ton: 2.1, gifts: ['G1', 'G2'] },
-        { id: 'r-2', host: 'MaryRead', roomNo: '00002', minBet: 3, ton: 1.4, gifts: ['G1', 'G2', 'G3', 'G4'] },
-        { id: 'r-3', host: 'CalicoJack', roomNo: '00003', minBet: 7, ton: 3.3, gifts: ['G1'] },
-        { id: 'r-4', host: 'AnneBonny', roomNo: '00004', minBet: 12, ton: 0.9, gifts: ['G1', 'G2', 'G3'], },
-        { id: 'r-5', host: 'LongJohn', roomNo: '00005', minBet: 20, ton: 5.0, gifts: ['G1', 'G2', 'G3', 'G4', 'G5'] },
-      ]
-    )
-  )
+  const [rooms, setRooms] = useState(/** @type {Room[]} */ ([]))
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // Load queue from backend
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        setLoading(true)
+        const list = await getQueue()
+        if (cancelled) return
+        // Map API to Room shape
+        const mapped = Array.isArray(list) ? list.map((item) => {
+          const minBet = Array.isArray(item?.bet) && item.bet.length > 0
+            ? Number(item.bet[0]?.value || 0)
+            : 0
+          const gifts = (Array.isArray(item?.bet) ? item.bet : []).map((b) => b?.slug || 'G')
+          return {
+            id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
+            host: item?.username || 'Pirate',
+            roomNo: String(item?.queque_id ?? '00000').padStart(5, '0'),
+            minBet,
+            ton: Number(item?.value ?? 0),
+            gifts,
+            photo: item?.photo_url || EmptyPersonSvg,
+          }
+        }) : []
+        setRooms(mapped)
+      } catch (e) {
+        if (cancelled) return
+        setError('Не удалось загрузить лобби')
+        logger?.error?.('LobbyPage: getQueue error', e)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
 
   // Use shared <main> scroll from AppLayout. No inner scroll container to avoid double scroll.
 
@@ -80,7 +112,9 @@ export default function LobbyPage() {
             <LobbyCard key={room.id} room={room} onJoin={onJoin} />)
           )}
           {filtered.length === 0 && (
-            <div className="text-center text-white/50 text-sm py-6">No rooms for this filter</div>
+            <div className="text-center text-white/50 text-sm py-6">
+              {loading ? 'Loading…' : (error || 'No rooms for this filter')}
+            </div>
           )}
         </div>
       </div>
