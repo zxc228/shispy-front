@@ -4,11 +4,11 @@ import { useTelegram } from '../../providers/TelegramProvider'
 import ProfileSvg from '../../components/icons/ProfileIcon.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
-import { getMe, getProfile } from '../../shared/api/users.api'
+import { getProfile } from '../../shared/api/users.api'
 import { logger } from '../../shared/logger'
 
 export default function ProfilePage() {
-  const { user, isInTelegram } = useTelegram()
+  const { user, authDone } = useTelegram()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -19,16 +19,14 @@ export default function ProfilePage() {
     : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || '—'
   const avatarSrc = user?.photo_url || EmptyPersonSvg
 
-  // Load profile data from backend (authorized by token)
+  // Load profile data from backend (authorized by token). Wait for authDone.
   useEffect(() => {
     let cancelled = false
     async function run() {
+      if (!authDone) return
       try {
         setLoading(true)
-        const [me, prof] = await Promise.all([
-          getMe().catch((e) => { logger.warn('getMe failed', e); return null }),
-          getProfile(),
-        ])
+        const prof = await getProfile()
         if (cancelled) return
         setProfile(prof)
       } catch (e) {
@@ -41,7 +39,7 @@ export default function ProfilePage() {
     }
     run()
     return () => { cancelled = true }
-  }, [])
+  }, [authDone])
 
   return (
     <div className="mx-auto max-w-[390px] space-y-3">

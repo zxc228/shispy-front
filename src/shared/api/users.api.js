@@ -1,15 +1,15 @@
-import api from './client'
-
-// GET /users/me -> string (username or id)
-export async function getMe() {
-  const res = await api.get('/users/me')
-  return res.data
-}
+import api, { apiLocal } from './client'
 
 // GET /users/profile -> { percantage, count_games, value, history: [...] }
 export async function getProfile() {
-  const res = await api.get('/users/profile')
-  return res.data
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  if (useSameOrigin) {
+    const res = await apiLocal.get('/users/profile')
+    return res.data
+  } else {
+    const res = await api.get('/users/profile')
+    return res.data
+  }
 }
 
-export default { getMe, getProfile }
+export default { getProfile }

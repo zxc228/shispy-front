@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { getTg, initTelegram } from '../lib/telegram'
+import { initTelegram } from '../lib/telegram'
 import { authTelegram } from '../shared/api/auth.api'
 import { apiSetAccessToken } from '../shared/api/client'
 import { logger } from '../shared/logger'
@@ -10,6 +10,7 @@ const TelegramContext = createContext({
   initData: null,
   initDataUnsafe: null,
   isInTelegram: false,
+  authDone: false,
 })
 
 export function TelegramProvider({ children }) {
@@ -79,8 +80,8 @@ export function TelegramProvider({ children }) {
   }, [tg, initData, authDone])
 
   const value = useMemo(
-    () => ({ tg, user, initData, initDataUnsafe, isInTelegram }),
-    [tg, user, initData, initDataUnsafe, isInTelegram]
+    () => ({ tg, user, initData, initDataUnsafe, isInTelegram, authDone }),
+    [tg, user, initData, initDataUnsafe, isInTelegram, authDone]
   )
 
   return <TelegramContext.Provider value={value}>{children}</TelegramContext.Provider>
