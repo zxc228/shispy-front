@@ -23,36 +23,35 @@ export default function BottomNav() {
   const { pathname } = useLocation();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0px)' }}
+      className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm h-16 pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="mx-auto max-w-[390px] w-full px-8">
-        <ul className="grid grid-cols-5">
+      <div className="mx-auto max-w-[390px] w-full px-4 h-full">
+        <ul className="grid grid-cols-5 h-full">
         {tabs.map((t) => (
-          <li key={t.to} className="h-12 inline-flex flex-col items-center justify-center">
+          <li key={t.to} className="h-full flex">
             <NavLink
               to={t.to}
               className={({ isActive }) => {
                 const lobbyForcedActive = t.to === '/lobby' && (pathname.startsWith('/create') || pathname.startsWith('/join'));
                 const active = isActive || lobbyForcedActive;
                 return [
-                  'group w-10 h-12 inline-flex flex-col items-center justify-start gap-1',
+                  'group flex-1 h-full w-full flex flex-col items-center justify-center gap-1.5',
                   active ? 'text-orange-400 active' : 'text-white/50'
                 ].join(' ');
               }}
             >
-              <div className="flex flex-col items-center justify-start gap-1">
+              <div className="flex flex-col items-center justify-center gap-1.5 h-full w-full">
                 <img
                   src={t.icon}
                   alt={`${t.label} icon`}
-                  className="w-6 h-6 block group-[.active]:hidden"
+                  className="w-8 h-8 block group-[.active]:hidden"
                 />
                 <img
                   src={t.activatedIcon}
                   alt={`${t.label} icon active`}
-                  className="w-6 h-6 hidden group-[.active]:block"
+                  className="w-8 h-8 hidden group-[.active]:block"
                 />
-                <span className="text-xs font-normal font-sans">{t.label}</span>
+                <span className="text-sm leading-none font-medium font-sans">{t.label}</span>
               </div>
             </NavLink>
           </li>

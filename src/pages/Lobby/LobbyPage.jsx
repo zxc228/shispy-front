@@ -6,11 +6,13 @@ import LobbyCard from './LobbyCard'
 import { getQueue } from '../../shared/api/lobby.api'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { logger } from '../../shared/logger'
+import { useLoading } from '../../providers/LoadingProvider'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
 export default function LobbyPage() {
   const navigate = useNavigate()
+  const { withLoading } = useLoading()
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | '1-5' | '5-15' | '15+'
   /** @type {[Room[], Function]} */
   const [rooms, setRooms] = useState(/** @type {Room[]} */ ([]))
@@ -23,7 +25,7 @@ export default function LobbyPage() {
     async function run() {
       try {
         setLoading(true)
-        const list = await getQueue()
+        const list = await withLoading(() => getQueue())
         if (cancelled) return
         // Map API to Room shape
         const mapped = Array.isArray(list) ? list.map((item) => {
@@ -38,7 +40,7 @@ export default function LobbyPage() {
             minBet,
             ton: Number(item?.value ?? 0),
             gifts,
-            photo: item?.photo_url || EmptyPersonSvg,
+            photo: typeof item?.photo_url === 'string' ? item.photo_url : '',
           }
         }) : []
         setRooms(mapped)
@@ -106,8 +108,8 @@ export default function LobbyPage() {
           <LobbyFilters active={activeFilter} onChange={setActiveFilter} />
         </div>
 
-        {/* rooms list */}
-        <div className="mt-4 grid gap-3 pb-6">
+        {/* rooms list (edge-to-edge) */}
+        <div className="mt-4 grid gap-3 pb-6 -mx-4">
           {filtered.map((room) => (
             <LobbyCard key={room.id} room={room} onJoin={onJoin} />)
           )}

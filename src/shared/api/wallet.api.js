@@ -5,10 +5,22 @@ export async function setWallet(wallet) {
   const payload = { wallet }
   const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
   if (useSameOrigin) {
-    const res = await apiLocal.post('/wallet/set_wallet', payload)
+    const res = await apiLocal.post('/wallet', payload)
     return res.data
   } else {
-    const res = await api.post('/wallet/set_wallet', payload)
+    const res = await api.post('/wallet', payload)
+    return res.data
+  }
+}
+
+// GET /wallet -> { wallet: string }
+export async function getWallet() {
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  if (useSameOrigin) {
+    const res = await apiLocal.get('/wallet')
+    return res.data
+  } else {
+    const res = await api.get('/wallet')
     return res.data
   }
 }
@@ -26,4 +38,4 @@ export async function createInvoice(amount) {
   }
 }
 
-export default { setWallet, createInvoice }
+export default { setWallet, getWallet, createInvoice }

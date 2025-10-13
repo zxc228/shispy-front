@@ -2,8 +2,11 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
 import Header from './Header'
 import BottomNav from './BottomNav'
+import LoadingOverlay from '../common/LoadingOverlay'
+import { useLoading } from '../../providers/LoadingProvider'
 
 export default function AppLayout() {
+  const { loading } = useLoading()
   const location = useLocation()
   const scrollRef = useRef(null)
   // keep scrollTop per route path
@@ -32,9 +35,10 @@ export default function AppLayout() {
       {/* общий скролл-контейнер для ВСЕХ страниц */}
       <main
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-4 pb-24 max-w-[390px] w-full mx-auto scrollbar-invisible scrollbar-stable [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]"
+        className="relative flex-1 overflow-y-auto px-4 py-4 pb-24 max-w-[390px] w-full mx-auto scrollbar-invisible scrollbar-stable [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]"
       >
         <Outlet />
+        <LoadingOverlay show={loading} />
       </main>
       <BottomNav />
     </div>

@@ -5,14 +5,18 @@ import ProfileSvg from '../../components/icons/ProfileIcon.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
+import { getWallet, setWallet } from '../../shared/api/wallet.api'
 import { logger } from '../../shared/logger'
+import { useLoading } from '../../providers/LoadingProvider'
 
 export default function ProfilePage() {
   const { user, authDone } = useTelegram()
+  const { withLoading } = useLoading()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [walletStatus, setWalletStatus] = useState('')
+  const [wallet, setWalletValue] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
 
   // Derived data from Telegram user
@@ -27,10 +31,18 @@ export default function ProfilePage() {
     async function run() {
       if (!authDone) return
       try {
-        setLoading(true)
-        const prof = await getProfile()
+  setLoading(true)
+  const prof = await withLoading(() => getProfile())
         if (cancelled) return
         setProfile(prof)
+        // also load wallet
+        try {
+          const wres = await withLoading(() => getWallet())
+          if (!cancelled) setWalletValue(wres?.wallet ?? '')
+        } catch (e) {
+          if (!cancelled) setWalletValue('')
+          logger.error('ProfilePage: getWallet error', e)
+        }
       } catch (e) {
         if (cancelled) return
         setError('Не удалось загрузить профиль')
@@ -105,19 +117,22 @@ export default function ProfilePage() {
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
-          <div className="text-center text-neutral-700 text-xs font-normal font-sans">КОШЕЛЕК1234</div>
+          <div className="text-center text-neutral-700 text-xs font-normal font-sans">
+            {wallet ? wallet : '—'}
+          </div>
           <div className="mt-2">
             <button
               type="button"
               className="h-10 px-4 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-sm font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
               onClick={async () => {
-                const w = window.prompt('Введите адрес кошелька TON')
+                const w = window.prompt(wallet ? 'Изменить адрес кошелька TON' : 'Введите адрес кошелька TON', wallet || '')
                 if (!w) return
                 try {
                   setWalletStatus('Отправка…')
-                  const res = await setWallet(w)
+                  const res = await withLoading(() => setWallet(w))
                   if (res?.status) {
                     setWalletStatus('Кошелёк сохранён')
+                    setWalletValue(w)
                   } else {
                     setWalletStatus('Не удалось сохранить')
                   }
@@ -129,7 +144,7 @@ export default function ProfilePage() {
                 }
               }}
             >
-              Add wallet
+              {wallet ? 'Edit wallet' : 'Add wallet'}
             </button>
           </div>
           {walletStatus && (
