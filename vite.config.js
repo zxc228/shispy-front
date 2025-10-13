@@ -45,6 +45,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/treasury': {
+          target: apiBase,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   }

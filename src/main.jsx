@@ -5,11 +5,14 @@ import './telegramViewport.js'
 import App from './App.jsx'
 import { TelegramProvider } from './providers/TelegramProvider.jsx'
 import { LoadingProvider } from './providers/LoadingProvider.jsx'
+import { BalanceProvider } from './providers/BalanceProvider.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 	<TelegramProvider>
 		<LoadingProvider>
-			<App />
+			<BalanceProvider>
+				<App />
+			</BalanceProvider>
 		</LoadingProvider>
 	</TelegramProvider>
 )

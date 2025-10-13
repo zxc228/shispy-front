@@ -38,4 +38,16 @@ export async function createInvoice(amount) {
   }
 }
 
-export default { setWallet, getWallet, createInvoice }
+// GET /wallet/balance -> { amount: number }
+export async function getBalance() {
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  if (useSameOrigin) {
+    const res = await apiLocal.get('/wallet/balance')
+    return res.data
+  } else {
+    const res = await api.get('/wallet/balance')
+    return res.data
+  }
+}
+
+export default { setWallet, getWallet, createInvoice, getBalance }

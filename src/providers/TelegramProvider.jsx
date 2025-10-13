@@ -3,6 +3,7 @@ import { initTelegram } from '../lib/telegram'
 import { authTelegram } from '../shared/api/auth.api'
 import { apiSetAccessToken } from '../shared/api/client'
 import { logger } from '../shared/logger'
+import { useBalance } from './BalanceProvider'
 
 const TelegramContext = createContext({
   tg: null,
@@ -14,6 +15,7 @@ const TelegramContext = createContext({
 })
 
 export function TelegramProvider({ children }) {
+  const balance = (() => { try { return useBalance() } catch { return { refresh: async () => {} } } })()
   const [tg, setTg] = useState(null)
   const [user, setUser] = useState(null)
   const [initData, setInitData] = useState(null)
@@ -54,7 +56,9 @@ export function TelegramProvider({ children }) {
       const existing = (() => { try { return sessionStorage.getItem('access_token') } catch { return null } })()
       if (existing) {
         apiSetAccessToken(existing)
-        logger.info('TelegramProvider: token already present, header set')
+  logger.info('TelegramProvider: token already present, header set')
+  // refresh balance immediately
+  balance.refresh?.()
         setAuthDone(true)
         return
       }
@@ -67,6 +71,8 @@ export function TelegramProvider({ children }) {
           apiSetAccessToken(res.access_token)
           setAuthDone(true)
           logger.info('TelegramProvider: token saved and header set')
+          // refresh balance immediately
+          balance.refresh?.()
         } else {
           logger.warn('TelegramProvider: no access_token in response', res)
         }

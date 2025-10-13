@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import EmptyGiftSvg from "../../components/icons/EmptyGift.svg";
 import TonSvg from "../../components/icons/TonIcon.svg";
-import { getGifts } from "../../shared/api/lobby.api";
+import { getTreasuryGifts } from "../../shared/api/treasury.api";
 
 export default function TreasurePage() {
   // My gifts loaded from backend
@@ -14,9 +14,9 @@ export default function TreasurePage() {
     async function run() {
       try {
         setLoading(true);
-        const res = await getGifts();
+        const res = await getTreasuryGifts();
         if (cancelled) return;
-        const gifts = Array.isArray(res?.gifts) ? res.gifts : [];
+        const gifts = Array.isArray(res) ? res : [];
         // map gifts to UI items
         setMyItems(
           gifts.map((g, idx) => ({

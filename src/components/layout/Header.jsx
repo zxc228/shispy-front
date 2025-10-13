@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom'
+import { useBalance } from '../../providers/BalanceProvider'
 import TonIcon from '../icons/TonIcon.svg'
 import ShipsyIcon from '../icons/shipsyIcon.svg'
 
 export default function Header({
   hidden = false,
-  balance = '500',
+  balance = undefined,
   logoSrc,
   onAdd,
 }) {
   const nav = useNavigate()
+  const { amount } = useBalance()
   const handleAdd = () => (onAdd ? onAdd() : nav('/add'))
   const logoUrl = logoSrc ?? ShipsyIcon
 
@@ -49,7 +51,7 @@ export default function Header({
               <div className="inline-flex items-center gap-1">
                 <img src={TonIcon} alt="TON" className="w-4 h-4 shrink-0 object-contain" />
                 <span className="text-white text-base font-bold font-sans">
-                  {balance}
+                  {balance ?? amount}
                 </span>
               </div>
             </div>

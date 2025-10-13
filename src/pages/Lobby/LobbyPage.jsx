@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import CreateBattleCTA from '../../components/common/CreateBattleCTA'
 import LobbyFilters from './LobbyFilters'
 import LobbyCard from './LobbyCard'
-import { getQueue } from '../../shared/api/lobby.api'
+import { getQueue, getWaitingStatus, cancelLobby } from '../../shared/api/lobby.api'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
@@ -12,12 +12,16 @@ import { useLoading } from '../../providers/LoadingProvider'
 
 export default function LobbyPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { withLoading } = useLoading()
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | '1-5' | '5-15' | '15+'
   /** @type {[Room[], Function]} */
   const [rooms, setRooms] = useState(/** @type {Room[]} */ ([]))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [waiting, setWaiting] = useState(false)
+  const [justCreated, setJustCreated] = useState(!!location.state?.created)
+  const createdSinceRef = useRef(justCreated ? Date.now() : 0)
 
   // Load queue from backend
   useEffect(() => {
@@ -54,6 +58,43 @@ export default function LobbyPage() {
     }
     run()
     return () => { cancelled = true }
+  }, [])
+
+  // Poll waiting status globally on Lobby every 3 seconds
+  useEffect(() => {
+    let cancelled = false
+    let timerId
+    const check = async () => {
+      try {
+        const res = await getWaitingStatus()
+        if (cancelled) return
+        const serverWaiting = !!res?.status
+        // if we have a fresh justCreated flag (TTL 12s), keep waiting on even if server says false
+        const ttlMs = 12000
+        const withinTtl = justCreated && createdSinceRef.current && (Date.now() - createdSinceRef.current < ttlMs)
+        const nextWaiting = serverWaiting || withinTtl
+        setWaiting(nextWaiting)
+        // If server acknowledges waiting, we can drop justCreated flag
+        if (serverWaiting && justCreated) setJustCreated(false)
+      } catch (e) {
+        // keep previous waiting state on errors; continue polling
+      } finally {
+        if (!cancelled) timerId = setTimeout(check, 5000)
+      }
+    }
+    check()
+    return () => { cancelled = true; if (timerId) clearTimeout(timerId) }
+  }, [])
+
+  // When landing with created flag, start waiting immediately and set TTL
+  useEffect(() => {
+    if (location.state?.created) {
+      setJustCreated(true)
+      createdSinceRef.current = Date.now()
+      setWaiting(true)
+    }
+    // We don't alter history here; state will clear on next navigation naturally
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Use shared <main> scroll from AppLayout. No inner scroll container to avoid double scroll.
@@ -108,6 +149,28 @@ export default function LobbyPage() {
           <LobbyFilters active={activeFilter} onChange={setActiveFilter} />
         </div>
 
+        {/* waiting banner */}
+        {waiting && (
+          <div className="mt-3 px-3 py-2 bg-neutral-800 rounded-xl border border-neutral-700/60 text-sm text-white/80 flex items-center justify-between">
+            <span>Lobby created. Waiting for opponent…</span>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await cancelLobby()
+                  // ignore result; hide waiting immediately
+                } finally {
+                  setWaiting(false)
+                  setJustCreated(false)
+                }
+              }}
+              className="ml-3 h-8 px-3 bg-neutral-700 rounded-lg text-white text-xs font-semibold hover:bg-neutral-600 active:translate-y-[0.5px]"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {/* rooms list (edge-to-edge) */}
         <div className="mt-4 grid gap-3 pb-6 -mx-4">
           {filtered.map((room) => (
@@ -120,8 +183,8 @@ export default function LobbyPage() {
           )}
         </div>
       </div>
-      {/* Единый CTA */}
-      <CreateBattleCTA onClick={onCreate} />
+      {/* Единый CTA — прячем, если есть активное ожидание */}
+      {!waiting && <CreateBattleCTA onClick={onCreate} />}
     </div>
   )
 }

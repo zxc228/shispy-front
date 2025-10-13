@@ -1,32 +1,51 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import { getGifts, createBattle } from '../../shared/api/lobby.api'
+import { logger } from '../../shared/logger'
+import { useLoading } from '../../providers/LoadingProvider'
 
 /** @typedef {{ id: string; image?: string|null; priceTON: number }} Treasure */
 
 export default function CreatePage({ onAddTreasure, onCreateBattle }) {
   const navigate = useNavigate()
+  const { withLoading } = useLoading()
 
-  // mock inventory
-  const inventory = useMemo(
-    () =>
-      /** @type {Treasure[]} */ ([
-        { id: 't1', image: null, priceTON: 25 },
-        { id: 't2', image: null, priceTON: 25 },
-        { id: 't3', image: null, priceTON: 50 },
-        { id: 't4', image: null, priceTON: 10 },
-        { id: 't5', image: null, priceTON: 2.1 },
-        { id: 't6', image: null, priceTON: 2.1 },
-        { id: 't7', image: null, priceTON: 2.1 },
-        { id: 't8', image: null, priceTON: 2.1 },
-        { id: 't9', image: null, priceTON: 2.1 },
-      ]),
-    []
-  )
+  const [inventory, setInventory] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        setLoading(true)
+        const res = await withLoading(() => getGifts())
+        if (cancelled) return
+        const gifts = Array.isArray(res?.gifts) ? res.gifts : []
+        const mapped = gifts.map((g) => ({
+          id: String(g?.gid ?? ''),
+          image: g?.photo || null,
+          priceTON: Number(g?.value ?? 0),
+        }))
+        setInventory(mapped)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
 
   const defaultView = inventory.length === 0 ? 'empty' : 'choose'
   const [view, setView] = useState(defaultView)
+
+  useEffect(() => {
+    // when inventory arrives, switch to choose view automatically
+    if (inventory.length > 0 && view !== 'choose') {
+      setView('choose')
+    }
+  }, [inventory])
   const [selectedIds, setSelectedIds] = useState([])
 
   const selectedCount = selectedIds.length
@@ -48,11 +67,16 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
     else navigate('/treasure')
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!selectedCount) return
-    const battleId = Math.random().toString(36).slice(2, 8)
-    if (onCreateBattle) onCreateBattle(selectedIds)
-    navigate(`/lobby/battle/${battleId}`)
+    const giftIds = selectedIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+    logger.debug('CreatePage: createBattle payload', { gifts: giftIds })
+    const res = await withLoading(() => createBattle(giftIds))
+    logger.debug('CreatePage: createBattle response', res)
+    if (res?.status) {
+      if (onCreateBattle) onCreateBattle(selectedIds)
+      navigate('/lobby', { state: { created: true } })
+    }
   }
 
   return (
@@ -236,7 +260,7 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
             )}
             <button
               type="button"
-              aria-label={disabled ? 'Create Battle' : 'Join'}
+              aria-label={disabled ? 'Create Battle' : 'Create'}
               disabled={disabled}
               onClick={onCreate}
               className={[
@@ -246,7 +270,7 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
                   : 'bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform duration-150',
               ].join(' ')}
             >
-              {disabled ? 'Create Battle' : 'Join'}
+              {disabled ? 'Create Battle' : 'Create'}
             </button>
           </div>
         </div>

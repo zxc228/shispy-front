@@ -37,7 +37,7 @@ export default function LobbyCard({ room, onJoin }) {
           />
           <span className="text-sm font-light text-white truncate inline-flex items-center gap-1">
             {room.host}
-            <KeyIcon />
+            
           </span>
           <span className="text-[10px] text-white/50">#{room.roomNo}</span>
         </div>
