@@ -8,6 +8,7 @@ import { getProfile } from '../../shared/api/users.api'
 import { getWallet, setWallet } from '../../shared/api/wallet.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
+import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
 
 export default function ProfilePage() {
   const { user, authDone } = useTelegram()
@@ -18,6 +19,8 @@ export default function ProfilePage() {
   const [walletStatus, setWalletStatus] = useState('')
   const [wallet, setWalletValue] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
+  const connectedAddress = useTonAddress() // user-friendly address if connected
+  const [tonConnectUI] = useTonConnectUI()
 
   // Derived data from Telegram user
   const displayName = user?.username
@@ -117,35 +120,48 @@ export default function ProfilePage() {
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
+          {/* If TON is connected, show connected address; otherwise show server-stored value */}
           <div className="text-center text-neutral-700 text-xs font-normal font-sans">
-            {wallet ? wallet : '—'}
+            {connectedAddress || wallet || '—'}
           </div>
-          <div className="mt-2">
-            <button
-              type="button"
-              className="h-10 px-4 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-sm font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
-              onClick={async () => {
-                const w = window.prompt(wallet ? 'Изменить адрес кошелька TON' : 'Введите адрес кошелька TON', wallet || '')
-                if (!w) return
-                try {
-                  setWalletStatus('Отправка…')
-                  const res = await withLoading(() => setWallet(w))
-                  if (res?.status) {
-                    setWalletStatus('Кошелёк сохранён')
-                    setWalletValue(w)
-                  } else {
-                    setWalletStatus('Не удалось сохранить')
+          <div className="mt-2 flex items-center gap-2">
+            <TonConnectButton />
+            {!connectedAddress && (
+              <button
+                type="button"
+                className="h-10 px-4 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-sm font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
+                onClick={async () => {
+                  const w = window.prompt(wallet ? 'Изменить адрес кошелька TON' : 'Введите адрес кошелька TON', wallet || '')
+                  if (!w) return
+                  try {
+                    setWalletStatus('Отправка…')
+                    const res = await withLoading(() => setWallet(w))
+                    if (res?.status) {
+                      setWalletStatus('Кошелёк сохранён')
+                      setWalletValue(w)
+                    } else {
+                      setWalletStatus('Не удалось сохранить')
+                    }
+                  } catch (e) {
+                    logger.error('setWallet error', e)
+                    setWalletStatus('Ошибка при сохранении')
+                  } finally {
+                    setTimeout(() => setWalletStatus(''), 2000)
                   }
-                } catch (e) {
-                  logger.error('setWallet error', e)
-                  setWalletStatus('Ошибка при сохранении')
-                } finally {
-                  setTimeout(() => setWalletStatus(''), 2000)
-                }
-              }}
-            >
-              {wallet ? 'Edit wallet' : 'Add wallet'}
-            </button>
+                }}
+              >
+                {wallet ? 'Edit wallet' : 'Add wallet'}
+              </button>
+            )}
+            {connectedAddress && (
+              <button
+                type="button"
+                className="h-10 px-4 bg-neutral-800 rounded-xl border border-neutral-700 text-white text-sm font-semibold active:translate-y-[0.5px]"
+                onClick={async () => { try { await tonConnectUI.disconnect() } catch {} }}
+              >
+                Disconnect
+              </button>
+            )}
           </div>
           {walletStatus && (
             <div className="mt-1 text-xs text-white/70">{walletStatus}</div>

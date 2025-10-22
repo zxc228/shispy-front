@@ -6,13 +6,20 @@ import App from './App.jsx'
 import { TelegramProvider } from './providers/TelegramProvider.jsx'
 import { LoadingProvider } from './providers/LoadingProvider.jsx'
 import { BalanceProvider } from './providers/BalanceProvider.jsx'
+import { TonConnectUIProvider } from '@tonconnect/ui-react'
+import TonConnectBridge from './features/tonconnect/TonConnectBridge.jsx'
+
+const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-	<TelegramProvider>
-		<LoadingProvider>
-			<BalanceProvider>
-				<App />
-			</BalanceProvider>
-		</LoadingProvider>
-	</TelegramProvider>
+	<TonConnectUIProvider manifestUrl={manifestUrl}>
+		<TelegramProvider>
+			<LoadingProvider>
+				<BalanceProvider>
+					<TonConnectBridge />
+					<App />
+				</BalanceProvider>
+			</LoadingProvider>
+		</TelegramProvider>
+	</TonConnectUIProvider>
 )
