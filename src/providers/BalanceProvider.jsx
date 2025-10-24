@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { getBalance } from '../shared/api/wallet.api'
 import { logger } from '../shared/logger'
+import { getToken } from '../shared/api/client'
 
 const BalanceContext = createContext({ amount: 0, refresh: async (_force = false) => {} })
 
@@ -26,14 +27,15 @@ export function BalanceProvider({ children }) {
 
   // Public refresh with throttle (min 5s between calls)
   const refresh = useCallback(async (force = false) => {
+    if (!getToken()) return
     const now = Date.now()
     if (!force && now - lastFetchRef.current < 5000) return
     await fetchBalance()
   }, [fetchBalance])
 
-  // Initial fetch on mount
+  // Initial fetch if token already present (e.g., after reload)
   useEffect(() => {
-    fetchBalance()
+    if (getToken()) fetchBalance()
   }, [fetchBalance])
 
   // Refresh on window focus and visibility change
