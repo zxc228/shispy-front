@@ -1,34 +1,54 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import { getGifts, joinBattle } from '../../shared/api/lobby.api'
+import { logger } from '../../shared/logger'
+import { useLoading } from '../../providers/LoadingProvider'
 
 /** @typedef {{ id: string; image?: string|null; priceTON: number }} Treasure */
 
 export default function JoinPage() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { withLoading } = useLoading()
 
-  // mock inventory (пользователь выбирает, чем зайти)
-  const inventory = useMemo(
-    () =>
-      /** @type {Treasure[]} */ ([
-        { id: 't1', image: null, priceTON: 25 },
-        { id: 't2', image: null, priceTON: 25 },
-        { id: 't3', image: null, priceTON: 50 },
-        { id: 't4', image: null, priceTON: 10 },
-        { id: 't5', image: null, priceTON: 2.1 },
-        { id: 't6', image: null, priceTON: 2.1 },
-        { id: 't7', image: null, priceTON: 2.1 },
-        { id: 't8', image: null, priceTON: 2.1 },
-        { id: 't9', image: null, priceTON: 2.1 },
-      ]),
-    []
-  )
+  const [inventory, setInventory] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Load available gifts (same as CreatePage)
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      try {
+        setLoading(true)
+        const res = await withLoading(() => getGifts())
+        if (cancelled) return
+        const gifts = Array.isArray(res?.gifts) ? res.gifts : []
+        const mapped = gifts.map((g) => ({
+          id: String(g?.gid ?? ''),
+          image: g?.photo || null,
+          priceTON: Number(g?.value ?? 0),
+        }))
+        setInventory(mapped)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
 
   const defaultView = inventory.length === 0 ? 'empty' : 'choose'
   const [view, setView] = useState(defaultView)
   const [selectedIds, setSelectedIds] = useState([])
+
+  // when inventory arrives, switch to choose view automatically
+  useEffect(() => {
+    if (inventory.length > 0 && view !== 'choose') {
+      setView('choose')
+    }
+  }, [inventory])
 
   const selectedCount = selectedIds.length
   const totalTon = useMemo(() => {
@@ -48,11 +68,24 @@ export default function JoinPage() {
     navigate('/treasure')
   }
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!selectedCount) return
-    // eslint-disable-next-line no-console
-    console.log('Joining battle', id, 'with treasures', selectedIds)
-    navigate(`/lobby/battle/${id}`)
+    const giftIds = selectedIds.map((tid) => Number(tid)).filter((n) => Number.isFinite(n))
+    const quequeId = Number(id)
+    if (!Number.isFinite(quequeId)) {
+      logger.warn('JoinPage: invalid queque_id from route param', { id })
+      return
+    }
+    logger.debug('JoinPage: joinBattle payload', { gifts: giftIds, queque_id: quequeId })
+    const res = await withLoading(() => joinBattle(giftIds, quequeId))
+    logger.debug('JoinPage: joinBattle response', res)
+    const gameId = res?.game_id
+    if (Number.isFinite(gameId)) {
+      navigate(`/lobby/battle/${gameId}`)
+    } else {
+      // Fallback: go back to lobby if no game_id returned
+      navigate('/lobby')
+    }
   }
 
   return (

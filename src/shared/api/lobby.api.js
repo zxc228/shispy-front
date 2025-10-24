@@ -41,6 +41,19 @@ export async function createBattle(gifts) {
   }
 }
 
+// POST /lobby/join_battle { gifts: number[], queque_id: number } -> { game_id: number }
+export async function joinBattle(gifts, queque_id) {
+  const payload = { gifts, queque_id }
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  if (useSameOrigin) {
+    const res = await apiLocal.post('/lobby/join_battle', payload)
+    return res.data
+  } else {
+    const res = await api.post('/lobby/join_battle', payload)
+    return res.data
+  }
+}
+
 // GET /lobby/waiting_status -> { status: boolean }
 export async function getWaitingStatus() {
   const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
@@ -65,4 +78,4 @@ export async function cancelLobby() {
   }
 }
 
-export default { getQueue, getGifts, createBattle, getWaitingStatus, cancelLobby }
+export default { getQueue, getGifts, createBattle, joinBattle, getWaitingStatus, cancelLobby }
