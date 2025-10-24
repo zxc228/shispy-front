@@ -1,4 +1,6 @@
-export default function StatusBar({ title, showTimer, onExit }) {
+export default function StatusBar({ title, showTimer, secondsLeft = 0, onExit }) {
+  const mm = String(Math.floor(Math.max(0, secondsLeft) / 60)).padStart(2, '0')
+  const ss = String(Math.max(0, secondsLeft) % 60).padStart(2, '0')
   return (
     <div className="px-2.5">
       <div className="w-full py-2 rounded-2xl flex items-center justify-between gap-2">
@@ -7,7 +9,7 @@ export default function StatusBar({ title, showTimer, onExit }) {
           {showTimer && (
             <div className="relative inline-flex items-center">
               <span className="absolute left-0 top-0 bottom-0 my-auto w-1 h-3 rounded-full bg-orange-400" />
-              <span className="relative rounded-full px-3 py-1 bg-neutral-800 text-white/90 text-xs">00:25</span>
+              <span className="relative rounded-full px-3 py-1 bg-neutral-800 text-white/90 text-xs">{mm}:{ss}</span>
             </div>
           )}
           {onExit && (

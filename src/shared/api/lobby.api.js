@@ -78,4 +78,47 @@ export async function cancelLobby() {
   }
 }
 
-export default { getQueue, getGifts, createBattle, joinBattle, getWaitingStatus, cancelLobby }
+// POST /lobby/set_filed { game_id, field } -> { status: boolean }
+export async function setTreasureField(game_id, field) {
+  const payload = { game_id, field }
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const config = { headers: { 'Content-Type': 'application/json' } }
+  if (useSameOrigin) {
+    const res = await apiLocal.post('/lobby/set_filed', payload, config)
+    return res.data
+  } else {
+    const res = await api.post('/lobby/set_filed', payload, config)
+    return res.data
+  }
+}
+
+// POST /lobby/step { game_id, field } -> gifts[] on win OR { status: 0 } on miss
+export async function step(game_id, field) {
+  const payload = { game_id, field }
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const config = { headers: { 'Content-Type': 'application/json' } }
+  if (useSameOrigin) {
+    const res = await apiLocal.post('/lobby/step', payload, config)
+    return res.data
+  } else {
+    const res = await api.post('/lobby/step', payload, config)
+    return res.data
+  }
+}
+
+// POST /lobby/concede { game_id, tuid } -> gifts[]
+// NOTE: Backend expects winner_tuid in body; pass opponent tuid when known.
+export async function concede(game_id, tuid) {
+  const payload = { game_id, tuid }
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  const config = { headers: { 'Content-Type': 'application/json' } }
+  if (useSameOrigin) {
+    const res = await apiLocal.post('/lobby/concede', payload, config)
+    return res.data
+  } else {
+    const res = await api.post('/lobby/concede', payload, config)
+    return res.data
+  }
+}
+
+export default { getQueue, getGifts, createBattle, joinBattle, getWaitingStatus, cancelLobby, setTreasureField, step, concede }

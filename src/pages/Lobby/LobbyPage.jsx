@@ -22,6 +22,7 @@ export default function LobbyPage() {
   const [waiting, setWaiting] = useState(false)
   const [justCreated, setJustCreated] = useState(!!location.state?.created)
   const createdSinceRef = useRef(justCreated ? Date.now() : 0)
+  const navigatedRef = useRef(false)
 
   // Load queue from backend
   useEffect(() => {
@@ -69,6 +70,12 @@ export default function LobbyPage() {
         const res = await getWaitingStatus()
         if (cancelled) return
         const serverWaiting = !!res?.status
+        // If backend says we are in-game, navigate to battle exactly once (host case)
+        if (!navigatedRef.current && res?.status === -1 && Number.isFinite(Number(res?.game_id))) {
+          navigatedRef.current = true
+          navigate(`/lobby/battle/${Number(res.game_id)}`)
+          return
+        }
         // if we have a fresh justCreated flag (TTL 12s), keep waiting on even if server says false
         const ttlMs = 12000
         const withinTtl = justCreated && createdSinceRef.current && (Date.now() - createdSinceRef.current < ttlMs)
