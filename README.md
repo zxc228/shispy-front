@@ -2,12 +2,19 @@
 
 Mobile-first React app (390×812) built with Vite and Tailwind (v4). It targets Telegram WebApp, includes a shared header and bottom nav, and several feature pages: Lobby, Create, Join, Battle, etc.
 
+## 🚀 Deployment
+
+- **[Full Deployment Guide](./DEPLOYMENT.md)** - Полный гайд по деплою с Docker и Nginx
+- **[Quick Start Guide](./QUICKSTART.md)** - Быстрая шпаргалка для деплоя
+
 ## Stack
 
 - React 19 + React Router 7
 - Vite 7, @vitejs/plugin-react
 - Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
 - ESLint 9 (recommended JS + react-hooks + react-refresh)
+- Socket.IO Client 4.x - Real-time game logic
+- TON Connect - Wallet integration
 
 ## Run
 
@@ -17,6 +24,8 @@ Mobile-first React app (390×812) built with Vite and Tailwind (v4). It targets 
 	- npm run build && npm run preview
 - Cloudflare tunnel (optional)
 	- npm run dev:twa (runs dev + tunnel for Telegram WebApp)
+- Game Server + Frontend
+	- npm run dev:twa:game (runs everything: frontend, tunnel, game server)
 
 ## App layout
 

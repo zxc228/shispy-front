@@ -1,0 +1,24 @@
+# Docker
+node_modules/
+npm-debug.log
+dist/
+.env.development
+.env.tunnel
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+docs/
+README.md
+тз.md
+*.sql
+
+# Development files
+.env.development
+.env.tunnel

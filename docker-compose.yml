@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shispy-frontend
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - shispy-network
+
+  # Node.js Socket.IO Server
+  game-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: shispy-game-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - BACKEND_URL=${BACKEND_URL:-http://your-django-backend.com}
+    restart: unless-stopped
+    networks:
+      - shispy-network
+
+networks:
+  shispy-network:
+    driver: bridge
