@@ -129,18 +129,23 @@ class Game {
     // Random choose starter
     const first = randomInt(0, 2) === 0 ? 'a' : 'b'
     this.turn = first
+    console.log(`[GAME ${this.gameId}] Toss completed, first turn: ${first}`)
     this.nsp.to(this.room).emit('toss', { firstTurn: first, seed: Date.now() })
     // Small delay to allow UI animation, then start turn
     setTimeout(() => {
+      console.log(`[GAME ${this.gameId}] Starting turn for ${first} after toss delay`)
       this.startTurn(first)
     }, 600)
   }
 
   startTurn(role) {
     this.turn = role
-    this.setPhase(role === 'a' ? 'turn_a' : 'turn_b')
+    const newPhase = role === 'a' ? 'turn_a' : 'turn_b'
+    console.log(`[GAME ${this.gameId}] startTurn: role=${role}, phase=${newPhase}`)
+    this.setPhase(newPhase)
     this.startTimer()
     this.emitState()
+    console.log(`[GAME ${this.gameId}] State emitted after startTurn`)
   }
 
   startTimer() {
@@ -253,7 +258,9 @@ class Game {
       if (!sid) continue
       const s = this.nsp.sockets.get(sid)
       if (s) {
-        s.emit('state', this.stateFor(sid))
+        const state = this.stateFor(sid)
+        console.log(`[GAME ${this.gameId}] Emitting state to ${role} (${sid}):`, JSON.stringify(state))
+        s.emit('state', state)
       }
     }
   }

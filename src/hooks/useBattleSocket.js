@@ -32,6 +32,7 @@ export default function useBattleSocket(gameId) {
     }
     const onState = (st) => {
       logger.debug('useBattleSocket: state update', st)
+      logger.info('useBattleSocket: phase=' + st?.phase + ', turn=' + st?.turn)
       setPhase(st?.phase || 'waiting')
       setTurn(st?.turn || null)
       setTimeLeft({ a: st?.players?.a?.timeLeft ?? 25000, b: st?.players?.b?.timeLeft ?? 25000 })

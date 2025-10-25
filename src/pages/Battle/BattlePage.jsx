@@ -99,6 +99,14 @@ export default function BattlePage() {
     if (!battle.useRealtime) return
     // enable server timer
     setTimerEnabled(true)
+    
+    logger.info('BattlePage: realtime state changed', { 
+      phase: battle.phase, 
+      role: battle.role, 
+      turn: battle.turn,
+      currentMode: mode 
+    })
+    
     // coin toss overlay - show only once per game
     if (battle.toss && !tossShown) {
       setTossInfo(battle.toss)
@@ -111,29 +119,36 @@ export default function BattlePage() {
 
     // phase mapping
     if (battle.phase === 'placing') {
+      logger.info('BattlePage: setting mode for placing phase', { placedSecret })
       setMode(placedSecret ? 'selectShipWaiting' : 'selectShip')
       return
     }
     if (battle.phase === 'toss') {
       // freeze interactions briefly
+      logger.info('BattlePage: toss phase, freezing UI')
       setMode('enemyTurn')
       return
     }
     if (battle.phase === 'turn_a' || battle.phase === 'turn_b') {
       const myTurn = battle.role && battle.turn && (battle.role === battle.turn)
+      logger.info('BattlePage: turn phase', { myTurn, role: battle.role, turn: battle.turn })
       setMode((prev) => {
         if (myTurn) {
-          return prev === 'myTurnSelected' ? 'myTurnSelected' : 'myTurn'
+          const newMode = prev === 'myTurnSelected' ? 'myTurnSelected' : 'myTurn'
+          logger.info('BattlePage: my turn, setting mode', { prev, newMode })
+          return newMode
         }
+        logger.info('BattlePage: enemy turn, setting enemyTurn mode')
         return 'enemyTurn'
       })
       return
     }
     if (battle.phase === 'finished') {
       // gameOver handled below
+      logger.info('BattlePage: game finished')
       return
     }
-  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.toss, placedSecret, tossShown])
+  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.toss, placedSecret, tossShown, mode])
 
   // Apply move results to grid and finish state in realtime
   useEffect(() => {
@@ -226,8 +241,10 @@ export default function BattlePage() {
       // Always use realtime socket; server also persists to backend
       setPlacedSecret(true)
       const treasureCell = selectedShipIds[0]
+      logger.info('BattlePage: placing secret', { treasureCell, gameId })
       battle.placeSecret(treasureCell)
       setMode('selectShipWaiting')
+      logger.info('BattlePage: secret placed, waiting for opponent')
     } catch (e) {
       // fallback to allow playing; keep going
       logger.error('BattlePage: setTreasureField error', e)
