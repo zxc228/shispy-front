@@ -17,14 +17,39 @@ export default function TreasurePage() {
         const res = await getTreasuryGifts();
         if (cancelled) return;
         const gifts = Array.isArray(res) ? res : [];
-        // map gifts to UI items
+        // map gifts to UI items with base64 photo conversion
         setMyItems(
-          gifts.map((g, idx) => ({
-            id: g?.gid ?? idx,
-            title: g?.slug || "Treasure",
-            priceTon: Number(g?.value ?? 0),
-            photo: g?.photo || null,
-          }))
+          gifts.map((g, idx) => {
+            // Extract number from slug (e.g., "StellarRocket-46305" -> "46305")
+            let displayName = "Treasure"
+            if (g?.slug && typeof g.slug === 'string') {
+              const parts = g.slug.split('-')
+              if (parts.length > 1) {
+                displayName = parts[parts.length - 1] // Last part after dash
+              } else {
+                displayName = g.slug // Use full slug if no dash
+              }
+            }
+            
+            // Convert base64 photo to data URL
+            let photoUrl = null;
+            if (g?.photo && typeof g.photo === 'string') {
+              // If photo already starts with data:, use as is
+              if (g.photo.startsWith('data:')) {
+                photoUrl = g.photo;
+              } else {
+                // Otherwise, assume it's base64 PNG and add data URL prefix
+                photoUrl = `data:image/png;base64,${g.photo}`;
+              }
+            }
+            
+            return {
+              id: g?.gid ?? idx,
+              title: displayName,
+              priceTon: Number(g?.value ?? 0),
+              photo: photoUrl,
+            };
+          })
         );
       } catch (e) {
         if (cancelled) return;
@@ -68,6 +93,23 @@ export default function TreasurePage() {
               <div key={i} className="aspect-square rounded-2xl bg-neutral-800/50 animate-pulse" />
             ))}
           </Grid3>
+        </div>
+      ) : error ? (
+        // Error state
+        <div className="h-[420px] rounded-2xl flex flex-col items-center justify-center gap-4">
+          <div className="text-7xl">⚠️</div>
+          <div className="text-center">
+            <div className="text-neutral-50 text-lg font-semibold leading-snug">Ошибка загрузки</div>
+            <div className="text-base leading-snug text-neutral-50/70">{error}</div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="h-12 px-4 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 
+                       shadow-[inset_0_-1px_0_rgba(230,141,74,1)] text-white font-semibold
+                       active:scale-95 transition-transform [text-shadow:_0_1px_25px_rgba(0,0,0,.25)]"
+          >
+            Обновить страницу
+          </button>
         </div>
       ) : tab === "my" ? (
         myItems.length ? (
@@ -142,21 +184,36 @@ function Grid3({ children }) {
 
 /* --------- Cards --------- */
 
-// Inventory card (простая заглушка со свето-рамкой)
+// Inventory card (светящаяся рамка с подарком из API)
 function MyTreasureCard({ title, photo, priceTon }) {
   return (
-    <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)]">
-      <div className="rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
-                      flex flex-col items-center justify-center px-2 py-3">
-        <img
-          src={photo || EmptyGiftSvg}
-          alt="Treasure"
-          className="w-10 h-10 opacity-80 object-contain"
-          referrerPolicy="no-referrer"
-          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = EmptyGiftSvg; }}
-        />
-        <p className="mt-2 text-[13px] font-medium text-white">{title}</p>
-        <div className="mt-1 text-xs text-white/70 inline-flex items-center gap-1">
+    <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)] animate-[pulse-glow_2s_ease-in-out_infinite]">
+      <div className="rounded-[10px] min-h-32 bg-neutral-800/80 backdrop-blur-sm border border-neutral-700
+                      flex flex-col items-center justify-center px-2 py-3 relative overflow-hidden">
+        {/* Background glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-400/5 to-transparent pointer-events-none" />
+        
+        {/* Gift image - larger size for better visibility */}
+        <div className="relative z-10 w-16 h-16 rounded-lg overflow-hidden bg-neutral-900/50 flex items-center justify-center">
+          <img
+            src={photo || EmptyGiftSvg}
+            alt={title}
+            className="w-full h-full object-contain"
+            referrerPolicy="no-referrer"
+            onError={(e) => { 
+              e.currentTarget.onerror = null; 
+              e.currentTarget.src = EmptyGiftSvg; 
+            }}
+          />
+        </div>
+        
+        {/* Title with gradient text and # prefix */}
+        <p className="mt-2 text-[13px] font-semibold text-transparent bg-clip-text bg-gradient-to-r from-orange-200 to-amber-200 text-center line-clamp-1">
+          #{title}
+        </p>
+        
+        {/* Price with TON icon */}
+        <div className="mt-1 text-xs text-orange-300 inline-flex items-center gap-1 font-medium">
           <span>{Number(priceTon ?? 0).toFixed(2)}</span>
           <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
         </div>

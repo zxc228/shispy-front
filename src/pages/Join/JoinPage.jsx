@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
-import { getGifts, joinBattle } from '../../shared/api/lobby.api'
+import { joinBattle } from '../../shared/api/lobby.api'
+import { getTreasuryGifts } from '../../shared/api/treasury.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 
@@ -17,20 +18,42 @@ export default function JoinPage() {
   const [loading, setLoading] = useState(true)
   const [joiningBattle, setJoiningBattle] = useState(false) // Loading state for join animation
 
-  // Load available gifts (same as CreatePage)
+  // Load available gifts (use Treasury gifts API)
   useEffect(() => {
     let cancelled = false
     async function run() {
       try {
         setLoading(true)
-        const res = await withLoading(() => getGifts())
+        const res = await withLoading(() => getTreasuryGifts())
         if (cancelled) return
-        const gifts = Array.isArray(res?.gifts) ? res.gifts : []
-        const mapped = gifts.map((g) => ({
-          id: String(g?.gid ?? ''),
-          image: g?.photo || null,
-          priceTON: Number(g?.value ?? 0),
-        }))
+        const gifts = Array.isArray(res) ? res : []
+        const mapped = gifts.map((g) => {
+          // Extract number from slug (e.g., "StellarRocket-46305" -> "46305")
+          let displayName = String(g?.gid ?? '')
+          if (g?.slug && typeof g.slug === 'string') {
+            const parts = g.slug.split('-')
+            if (parts.length > 1) {
+              displayName = parts[parts.length - 1] // Last part after dash
+            }
+          }
+          
+          // Convert base64 photo to data URL
+          let photoUrl = null
+          if (g?.photo && typeof g.photo === 'string') {
+            if (g.photo.startsWith('data:')) {
+              photoUrl = g.photo
+            } else {
+              photoUrl = `data:image/png;base64,${g.photo}`
+            }
+          }
+          
+          return {
+            id: String(g?.gid ?? ''),
+            name: displayName,
+            image: photoUrl,
+            priceTON: Number(g?.value ?? 0),
+          }
+        })
         setInventory(mapped)
       } finally {
         if (!cancelled) setLoading(false)
@@ -265,18 +288,36 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       type="button"
       aria-pressed={!!selected}
       onClick={onToggle}
-      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden active:scale-95 transition-transform`}
+      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden active:scale-95 transition-transform flex flex-col`}
     >
       {treasure?.image ? (
-        <div className="w-full h-full p-2">
+        <div className="flex-1 p-2 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={treasure.image} alt="Treasure" className="w-full h-full object-cover rounded-[8px]" />
+          <img 
+            src={treasure.image} 
+            alt={treasure.name || "Treasure"} 
+            className="w-full h-full object-contain rounded-[8px]"
+            onError={(e) => { 
+              e.currentTarget.onerror = null
+              e.currentTarget.src = EmptyGiftSvg
+            }}
+          />
         </div>
       ) : (
-        <div className="w-full h-full bg-neutral-700 grid place-items-center p-2">
+        <div className="flex-1 bg-neutral-700 grid place-items-center p-2">
           <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
         </div>
       )}
+      
+      {/* Display name at bottom */}
+      {treasure?.name && (
+        <div className="px-1 py-1 bg-neutral-900/80 backdrop-blur-sm">
+          <p className="text-xs text-neutral-300 text-center font-medium truncate">
+            #{treasure.name}
+          </p>
+        </div>
+      )}
+      
       {selected && (
         <span className="absolute inset-0 rounded-[10px] pointer-events-none bg-orange-400/25 shadow-[0_0_25px_0_rgba(200,109,55,0.50)] border-2 border-orange-400" />
       )}
