@@ -223,7 +223,7 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       type="button"
       aria-pressed={selected}
       onClick={onToggle}
-      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden active:scale-95 transition-transform`}
+      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden transition-all duration-200 ${selected ? 'animate-[bounce_0.5s_ease-out] scale-105' : 'hover:scale-105 active:scale-95'}`}
     >
       {treasure?.image ? (
         <div className="w-full h-full p-2">

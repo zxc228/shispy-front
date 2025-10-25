@@ -8,6 +8,7 @@ import { getQueue, getWaitingStatus, cancelLobby } from '../../shared/api/lobby.
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
+import { useGameSocket } from '../../providers/GameSocketProvider'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
@@ -15,6 +16,7 @@ export default function LobbyPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { withLoading } = useLoading()
+  const { getSocket, connected } = useGameSocket()
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | '1-5' | '5-15' | '15+'
   /** @type {[Room[], Function]} */
   const [rooms, setRooms] = useState(/** @type {Room[]} */ ([]))
@@ -22,45 +24,109 @@ export default function LobbyPage() {
   const [error, setError] = useState('')
   const [waiting, setWaiting] = useState(false)
   const [justCreated, setJustCreated] = useState(!!location.state?.created)
+  const [refreshing, setRefreshing] = useState(false)
+  const [newRoomIds, setNewRoomIds] = useState(new Set()) // Track new rooms for highlight animation
   const createdSinceRef = useRef(justCreated ? Date.now() : 0)
   const navigatedRef = useRef(false)
+  const touchStartY = useRef(0)
+  const pullDistance = useRef(0)
+  const prevRoomIdsRef = useRef(new Set())
 
   // Load queue from backend
+  const loadQueue = async (showLoadingState = true) => {
+    try {
+      if (showLoadingState) setLoading(true)
+      const list = await withLoading(() => getQueue())
+      // Map API to Room shape
+      const mapped = Array.isArray(list) ? list.map((item) => {
+        const minBet = Array.isArray(item?.bet) && item.bet.length > 0
+          ? Number(item.bet[0]?.value || 0)
+          : 0
+        const gifts = (Array.isArray(item?.bet) ? item.bet : []).map((b) => b?.slug || 'G')
+        return {
+          id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
+          host: item?.username || 'Pirate',
+          roomNo: String(item?.queque_id ?? '00000').padStart(5, '0'),
+          minBet,
+          ton: Number(item?.value ?? 0),
+          gifts,
+          photo: typeof item?.photo_url === 'string' ? item.photo_url : '',
+        }
+      }) : []
+      
+      // Detect new rooms for highlight animation
+      const currentIds = new Set(mapped.map(r => r.id))
+      const prevIds = prevRoomIdsRef.current
+      const newIds = new Set([...currentIds].filter(id => !prevIds.has(id)))
+      
+      setRooms(mapped)
+      setNewRoomIds(newIds)
+      prevRoomIdsRef.current = currentIds
+      
+      // Clear new room highlights after 3 seconds
+      if (newIds.size > 0) {
+        setTimeout(() => {
+          setNewRoomIds(new Set())
+        }, 3000)
+      }
+      
+      setError('')
+    } catch (e) {
+      setError('Не удалось загрузить лобби')
+      logger?.error?.('LobbyPage: getQueue error', e)
+    } finally {
+      if (showLoadingState) setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  // Initial load
   useEffect(() => {
-    let cancelled = false
-    async function run() {
-      try {
-        setLoading(true)
-        const list = await withLoading(() => getQueue())
-        if (cancelled) return
-        // Map API to Room shape
-        const mapped = Array.isArray(list) ? list.map((item) => {
-          const minBet = Array.isArray(item?.bet) && item.bet.length > 0
-            ? Number(item.bet[0]?.value || 0)
-            : 0
-          const gifts = (Array.isArray(item?.bet) ? item.bet : []).map((b) => b?.slug || 'G')
-          return {
-            id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
-            host: item?.username || 'Pirate',
-            roomNo: String(item?.queque_id ?? '00000').padStart(5, '0'),
-            minBet,
-            ton: Number(item?.value ?? 0),
-            gifts,
-            photo: typeof item?.photo_url === 'string' ? item.photo_url : '',
-          }
-        }) : []
-        setRooms(mapped)
-      } catch (e) {
-        if (cancelled) return
-        setError('Не удалось загрузить лобби')
-        logger?.error?.('LobbyPage: getQueue error', e)
-      } finally {
-        if (!cancelled) setLoading(false)
+    loadQueue()
+  }, [])
+
+  // Polling: refresh queue every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadQueue(false) // Don't show loading spinner on auto-refresh
+    }, 10000) // 10 seconds
+    return () => clearInterval(interval)
+  }, [])
+
+  // Socket.IO: listen for lobby updates
+  useEffect(() => {
+    const socket = getSocket?.()
+    if (!socket || !connected) return
+
+    const handleLobbyUpdate = () => {
+      logger.info('LobbyPage: lobby_update event received')
+      loadQueue(false) // Refresh without loading state
+    }
+
+    socket.on('lobby_update', handleLobbyUpdate)
+    
+    return () => {
+      socket.off('lobby_update', handleLobbyUpdate)
+    }
+  }, [connected, getSocket])
+
+  // Refresh when returning to page (visibility change)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadQueue(false)
       }
     }
-    run()
-    return () => { cancelled = true }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
+
+  // Pull-to-refresh handler
+  const handleRefresh = () => {
+    setRefreshing(true)
+    loadQueue(false)
+  }
 
   // Poll waiting status globally on Lobby every 3 seconds
   useEffect(() => {
@@ -162,10 +228,37 @@ export default function LobbyPage() {
         </div>
         */}
 
-        {/* section title with online counter */}
+        {/* section title with online counter and refresh button */}
         <div className="mt-2 flex items-center justify-between">
-          <div className="text-left text-white/90 text-sm tracking-wide">Lobby</div>
-          <OnlineCounter />
+          <div className="flex items-center gap-2">
+            <div className="text-left text-white/90 text-sm tracking-wide">Lobby</div>
+            {refreshing && (
+              <div className="animate-spin w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 active:scale-95 rounded-lg transition-all disabled:opacity-50"
+              title="Refresh lobby"
+            >
+              <svg 
+                className={`w-4 h-4 text-white/70 ${refreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                />
+              </svg>
+            </button>
+            <OnlineCounter />
+          </div>
         </div>
 
         {/* filters */}
@@ -198,7 +291,12 @@ export default function LobbyPage() {
         {/* rooms list (edge-to-edge) */}
         <div className="mt-4 grid gap-3 pb-6 -mx-4">
           {filtered.map((room) => (
-            <LobbyCard key={room.id} room={room} onJoin={onJoin} />)
+            <LobbyCard 
+              key={room.id} 
+              room={room} 
+              onJoin={onJoin} 
+              isNew={newRoomIds.has(room.id)}
+            />)
           )}
           {filtered.length === 0 && (
             <div className="text-center text-white/50 text-sm py-6">

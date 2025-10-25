@@ -4,6 +4,7 @@ import StatusBar from './StatusBar'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import BattleCell from './BattleCell'
+import Confetti from '../../components/animations/Confetti'
 // REST battle APIs removed from this component in realtime mode
 import { logger } from '../../shared/logger'
 import { useTelegram } from '../../providers/TelegramProvider'
@@ -23,6 +24,7 @@ export default function BattlePage() {
   const [selectedTargetId, setSelectedTargetId] = useState(/** @type {number|null} */(null))
   const [attackingCell, setAttackingCell] = useState(/** @type {number|null} */(null)) // Cell being attacked
   const [sheet, setSheet] = useState(/** @type {null|{variant:'win'|'lose', amount:number, gifts?: any[]}} */(null))
+  const [showConfetti, setShowConfetti] = useState(false)
   const [firstWinTriggered, setFirstWinTriggered] = useState(false)
   const pollingRef = useRef(/** @type {any} */(null))
   const gameId = useMemo(() => Number(id), [id])
@@ -152,6 +154,7 @@ export default function BattlePage() {
         const rewards = mr.rewards || []
         const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
         setSheet({ variant: 'win', amount: Number(total.toFixed(2)), gifts: rewards })
+        setShowConfetti(true) // Show confetti on win!
         setMode('win')
       }
     }
@@ -180,6 +183,7 @@ export default function BattlePage() {
         amount: Number(total.toFixed(2)),
         gifts: rewards
       })
+      setShowConfetti(true) // Show confetti on win!
     } else {
       // Loser: show what was bet and lost
       const lostGifts = myBet?.gifts || []
@@ -276,6 +280,9 @@ export default function BattlePage() {
 
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
+      {/* Confetti on win */}
+      {showConfetti && <Confetti duration={4000} particleCount={80} />}
+      
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
   <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} onExit={() => {
@@ -362,7 +369,14 @@ export default function BattlePage() {
                 {Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
                   // Show actual gifts (either won or lost)
                   sheet.gifts.map((g, i) => (
-                    <div key={`gift-${g?.gid ?? i}-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden">
+                    <div 
+                      key={`gift-${g?.gid ?? i}-${i}`} 
+                      className={[
+                        "aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden",
+                        sheet.variant === 'win' ? 'animate-[giftDrop_0.6s_ease-out_forwards]' : ''
+                      ].join(' ')}
+                      style={sheet.variant === 'win' ? { animationDelay: `${i * 0.1}s` } : {}}
+                    >
                       {g?.photo ? (
                         <img src={g.photo} alt={g?.slug || 'Gift'} className="w-full h-full object-cover" />
                       ) : (

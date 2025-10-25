@@ -5,7 +5,7 @@ import HostPlaceholder from '../../components/icons/EmptyPerson.svg'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
-export default function LobbyCard({ room, onJoin }) {
+export default function LobbyCard({ room, onJoin, isNew = false }) {
   const KeyIcon = () => (
     <span className="relative inline-block w-3.5 h-3.5 align-middle">
       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-0.5 bg-white rounded" />
@@ -20,7 +20,7 @@ export default function LobbyCard({ room, onJoin }) {
   const photoSrc = isValidPhoto ? rawPhoto : HostPlaceholder
 
   return (
-  <div className="w-full rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-neutral-700 overflow-hidden">
+  <div className={`w-full rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] outline outline-1 outline-neutral-700 overflow-hidden transition-all duration-300 hover:outline-orange-400/50 hover:shadow-[0_0_20px_rgba(251,146,60,0.3)] hover:-translate-y-1 cursor-pointer ${isNew ? 'animate-[pulse_1s_ease-in-out_3] outline-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.5)]' : ''}`}>
       <div className="relative p-4 md:p-5 flex flex-col gap-6">
       {/* header */}
       <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { io } from 'socket.io-client'
 import { getToken } from '../shared/api/client'
 import { logger } from '../shared/logger'
+import ConnectionError from '../components/common/ConnectionError'
 
 const GameSocketContext = createContext({
   connected: false,
@@ -12,6 +13,8 @@ export function GameSocketProvider({ children }) {
   const socketRef = useRef(null)
   const [connected, setConnected] = useState(false)
   const [authToken, setAuthToken] = useState(() => getToken())
+  const [showConnectionError, setShowConnectionError] = useState(false)
+  const reconnectAttempts = useRef(0)
 
   // Connect socket and recreate when token changes (Telegram auth may arrive later)
   useEffect(() => {
@@ -31,13 +34,24 @@ export function GameSocketProvider({ children }) {
       const onConnect = () => {
         logger.info('GameSocket: connected ✅', { id: s.id })
         setConnected(true)
+        setShowConnectionError(false)
+        reconnectAttempts.current = 0
       }
       const onDisconnect = (reason) => {
         logger.warn('GameSocket: disconnected ❌', { reason })
         setConnected(false)
+        // Show error screen after 3 failed attempts
+        if (reconnectAttempts.current >= 3) {
+          setShowConnectionError(true)
+        }
       }
       const onConnectError = (e) => {
         logger.error('GameSocket: connect_error ⚠️', { message: e?.message || String(e), code: e?.code })
+        reconnectAttempts.current += 1
+        // Show error screen after 3 failed attempts
+        if (reconnectAttempts.current >= 3) {
+          setShowConnectionError(true)
+        }
       }
       const onError = (e) => {
         logger.error('GameSocket: socket error ⚠️', { message: e?.message || String(e) })
@@ -81,8 +95,23 @@ export function GameSocketProvider({ children }) {
     getSocket: () => socketRef.current,
   }), [connected])
 
+  const handleRetry = () => {
+    setShowConnectionError(false)
+    reconnectAttempts.current = 0
+    const socket = socketRef.current
+    if (socket) {
+      socket.connect()
+    } else {
+      // Force reload if socket is dead
+      window.location.reload()
+    }
+  }
+
   return (
-    <GameSocketContext.Provider value={value}>{children}</GameSocketContext.Provider>
+    <GameSocketContext.Provider value={value}>
+      {children}
+      <ConnectionError show={showConnectionError} onRetry={handleRetry} />
+    </GameSocketContext.Provider>
   )
 }
 

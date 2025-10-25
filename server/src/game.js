@@ -202,10 +202,15 @@ class Game {
     const role = this.playerRoleBySid(sid)
     if (!role) return
     const winner = role === 'a' ? 'b' : 'a'
-    // Inform backend about concede so it can settle correctly
-    this.apiConcede(role).finally(() => {
-      this.finish(winner, { reason: 'concede' })
-    })
+    // Inform backend about concede so it can settle correctly and get rewards
+    this.apiConcede(role)
+      .then((rewards) => {
+        this.finish(winner, { reason: 'concede', rewards })
+      })
+      .catch(() => {
+        // If API fails, still end the game but without rewards
+        this.finish(winner, { reason: 'concede' })
+      })
   }
 
   finish(winner, extra = {}) {
@@ -280,6 +285,8 @@ class Game {
     const api = this.axiosFor(role)
     const winnerRole = role === 'a' ? 'b' : 'a'
     const winnerTuid = this.players[winnerRole]?.tuid
-    await api.post('/lobby/concede', { game_id: Number(this.gameId), tuid: winnerTuid })
+    const res = await api.post('/lobby/concede', { game_id: Number(this.gameId), tuid: winnerTuid })
+    // Return rewards from backend
+    return res?.data?.rewards || []
   }
 }

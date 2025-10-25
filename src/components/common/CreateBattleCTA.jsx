@@ -10,7 +10,7 @@ export default function CreateBattleCTA({ onClick }) {
         <button
           type="button"
           onClick={handleClick}
-          className="h-12 w-full bg-gradient-to-l from-white to-gray-200 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] text-neutral-800 font-semibold active:translate-y-[0.5px]"
+          className="h-12 w-full bg-gradient-to-l from-white to-gray-200 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] text-neutral-800 font-semibold active:translate-y-[0.5px] animate-[pulse-glow_2s_ease-in-out_infinite]"
         >
           Create Battle
         </button>
