@@ -2,30 +2,79 @@
 
 Mobile-first React app (390×812) built with Vite and Tailwind (v4). It targets Telegram WebApp, includes a shared header and bottom nav, and several feature pages: Lobby, Create, Join, Battle, etc.
 
-## 🚀 Deployment
+## 🚀 Quick Start
 
-- **[Full Deployment Guide](./DEPLOYMENT.md)** - Полный гайд по деплою с Docker и Nginx
-- **[Quick Start Guide](./QUICKSTART.md)** - Быстрая шпаргалка для деплоя
+### Test Mode (рекомендуется для разработки)
+```bash
+npm install
+npm run dev:twa:game
+```
+
+Запускает полный стек:
+- Frontend через Cloudflare туннель (для Telegram WebApp)
+- Локальный game server (localhost:3001)
+- Подключение к удалённому backend (147.45.255.52:8123)
+
+### Другие режимы
+
+| Команда | Описание |
+|---------|----------|
+| `npm run dev` | Только frontend (localhost:5173) |
+| `npm run dev:twa` | Frontend + туннель (без game server) |
+| `npm run dev:twa:game` | **Полный стек** (фронт + туннель + game server) |
+| `npm run dev:all` | Frontend + game server (без туннеля) |
+
+📖 Подробнее: **[DEV-MODES.md](./DEV-MODES.md)**
+
+---
+
+## 📦 Deployment
+
+- **[DEPLOY.md](./DEPLOY.md)** - Полный гайд по production деплою (Docker, Nginx, SSL)
+- **[DEV-MODES.md](./DEV-MODES.md)** - Режимы разработки и отладка
+
+**Production:** https://cosmopoliten.online
 
 ## Stack
 
-- React 19 + React Router 7
-- Vite 7, @vitejs/plugin-react
-- Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
-- ESLint 9 (recommended JS + react-hooks + react-refresh)
-- Socket.IO Client 4.x - Real-time game logic
-- TON Connect - Wallet integration
+- **Frontend:** React 19 + React Router 7
+- **Build:** Vite 7, @vitejs/plugin-react
+- **Styling:** Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
+- **Linting:** ESLint 9 (recommended JS + react-hooks + react-refresh)
+- **Real-time:** Socket.IO Client 4.x (game logic)
+- **Wallet:** TON Connect
+- **Game Server:** Node.js + Socket.IO 4.8
+- **Backend:** FastAPI (separate repo)
 
-## Run
+---
 
-- Dev server
-	- npm run dev
-- Local preview
-	- npm run build && npm run preview
-- Cloudflare tunnel (optional)
-	- npm run dev:twa (runs dev + tunnel for Telegram WebApp)
-- Game Server + Frontend
-	- npm run dev:twa:game (runs everything: frontend, tunnel, game server)
+## Development
+
+### Run modes
+
+- **Dev server:** `npm run dev` (localhost:5173)
+- **Dev + Tunnel:** `npm run dev:twa` (Cloudflare tunnel для Telegram)
+- **Full stack:** `npm run dev:twa:game` ⭐ (фронт + туннель + game server)
+- **Local build:** `npm run build && npm run preview`
+
+📖 **Подробнее:** [DEV-MODES.md](./DEV-MODES.md)
+
+### Production build
+```bash
+npm run build  # Генерирует dist/ для деплоя
+```
+
+---
+
+## Environment Files
+
+| Файл | Команда | Backend | Game Server |
+|------|---------|---------|-------------|
+| `.env.development` | `npm run dev` | Remote | - |
+| `.env.test` | `npm run dev:twa:game` | Remote | Local |
+| `.env.production` | Production | Nginx proxy | Nginx proxy |
+
+---
 
 ## App layout
 

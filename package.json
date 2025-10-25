@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "dev:tunnel": "vite --mode tunnel",
+    "dev:test": "vite --mode test",
     "build": "vite build",
     "preview": "vite preview",
     "tunnel": "wait-on http://localhost:5173 && cloudflared tunnel --url http://localhost:5173",
     "dev:twa": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\"",
     "dev:server": "npm --prefix server run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
-    "dev:twa:game": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\" \"npm:dev:server\""
+    "dev:twa:game": "concurrently \"npm:dev:test\" \"npm:tunnel\" \"npm:dev:server\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

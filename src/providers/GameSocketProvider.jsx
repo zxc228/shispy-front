@@ -19,23 +19,45 @@ export function GameSocketProvider({ children }) {
   // Connect socket and recreate when token changes (Telegram auth may arrive later)
   useEffect(() => {
     try {
-      // VITE_GAME_WS_URL is the transport path (e.g. '/socket.io'). Do NOT use
-      // it as a namespace. Use namespace '/' (or configured namespace) and
-      // pass path option so the client uses the correct transport path when
-      // connecting through the host Nginx proxy.
-      const path = import.meta.env.VITE_GAME_WS_URL || '/socket.io'
+      // Parse VITE_GAME_WS_URL: can be either:
+      // 1) Full URL like 'http://localhost:3001' (development with local game server)
+      // 2) Path like '/socket.io' (production with Nginx proxy)
+      const wsUrl = import.meta.env.VITE_GAME_WS_URL || '/socket.io'
       const namespace = import.meta.env.VITE_GAME_NAMESPACE || '/'
-      logger.info(`GameSocket: connecting namespace=${namespace} path=${path}`, { authToken: !!authToken })
-      const s = io(namespace, {
-        path,
-        autoConnect: true,
-        transports: ['websocket', 'polling'],
-        auth: authToken ? { token: authToken } : undefined,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 500,
-        reconnectionDelayMax: 5000,
-      })
+      
+      let socketUrl, options
+      
+      // If wsUrl starts with http:// or https://, it's a full URL (development mode)
+      if (wsUrl.startsWith('http://') || wsUrl.startsWith('https://')) {
+        // Development: connect to full URL + namespace
+        socketUrl = wsUrl + namespace
+        options = {
+          autoConnect: true,
+          transports: ['websocket', 'polling'],
+          auth: authToken ? { token: authToken } : undefined,
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 500,
+          reconnectionDelayMax: 5000,
+        }
+        logger.info(`GameSocket: connecting (dev mode) url=${socketUrl}`, { authToken: !!authToken })
+      } else {
+        // Production: wsUrl is transport path, use namespace separately
+        socketUrl = namespace
+        options = {
+          path: wsUrl,
+          autoConnect: true,
+          transports: ['websocket', 'polling'],
+          auth: authToken ? { token: authToken } : undefined,
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 500,
+          reconnectionDelayMax: 5000,
+        }
+        logger.info(`GameSocket: connecting (prod mode) namespace=${namespace} path=${wsUrl}`, { authToken: !!authToken })
+      }
+      
+      const s = io(socketUrl, options)
       socketRef.current = s
       const onConnect = () => {
         logger.info('GameSocket: connected ✅', { id: s.id })
