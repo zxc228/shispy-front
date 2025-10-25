@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  # React Frontend
+  # React Frontend - serve static files
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: shispy-frontend
     ports:
-      - "80:80"
+      - "5000:5000"
     environment:
       - NODE_ENV=production
     restart: unless-stopped

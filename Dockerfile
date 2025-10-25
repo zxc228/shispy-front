@@ -15,16 +15,19 @@ COPY . .
 # Build static files
 RUN npm run build
 
-# Production stage - serve with nginx
-FROM nginx:alpine
+# Production stage - serve static files with simple http server
+FROM node:20-alpine
 
-# Copy built files
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve package to serve static files
+RUN npm install -g serve
+
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
 
 # Expose port
-EXPOSE 80
+EXPOSE 5000
 
-CMD ["nginx", "-g", "daemon off;"]
+# Serve static files
+CMD ["serve", "-s", "dist", "-l", "5000"]

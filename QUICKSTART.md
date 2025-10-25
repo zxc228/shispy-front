@@ -37,9 +37,9 @@ server {
     listen 80;
     server_name твой-домен.com;
 
-    # Frontend (Docker контейнер)
+    # Frontend (Docker контейнер на порту 5000)
     location / {
-        proxy_pass http://localhost:80;
+        proxy_pass http://localhost:5000;
         proxy_set_header Host $host;
     }
 
@@ -76,13 +76,15 @@ sudo systemctl reload nginx
 ## 📦 Что внутри
 
 **2 Docker контейнера:**
-1. **Frontend** (nginx:alpine) - порт 80 - статические файлы React
+1. **Frontend** (node:20-alpine + serve) - порт 5000 - статические файлы React
 2. **Game Server** (node:20-alpine) - порт 3001 - Socket.IO WebSocket
 
-**FastAPI Backend** - уже работает на порту 8123 (не в Docker)
+**На хосте (не в Docker):**
+- **Nginx** - порт 80 - reverse proxy
+- **FastAPI** - порт 8123 - backend API
 
-**Nginx** проксирует:
-- `/` → Frontend контейнер (порт 80)
+**Nginx проксирует:**
+- `/` → Frontend контейнер (порт 5000)
 - `/socket.io/` → Game Server контейнер (порт 3001)
 - `/api/` → FastAPI (порт 8123)
 
@@ -150,18 +152,18 @@ docker compose build --no-cache
 
 ```
 Сервер (Ubuntu/Debian):
-├── Docker Desktop / Docker Engine
-├── Nginx (reverse proxy)
+├── Nginx (порт 80) - УЖЕ УСТАНОВЛЕН ✅
 ├── FastAPI (порт 8123) - УЖЕ РАБОТАЕТ ✅
-├── /var/www/shispy/
-│   ├── Frontend контейнер (порт 80)
-│   └── Game Server контейнер (порт 3001)
+├── Docker Engine
+└── /var/www/shispy/
+    ├── Frontend контейнер (порт 5000)
+    └── Game Server контейнер (порт 3001)
 ```
 
 **Nginx маршрутизация:**
-- `http://твой-домен.com/` → Frontend
-- `ws://твой-домен.com/socket.io/` → Game Server
-- `http://твой-домен.com/api/` → FastAPI (порт 8123)
+- `http://твой-домен.com/` → Docker Frontend (:5000)
+- `ws://твой-домен.com/socket.io/` → Docker Game Server (:3001)
+- `http://твой-домен.com/api/` → FastAPI (:8123) на хосте
 
 ---
 
