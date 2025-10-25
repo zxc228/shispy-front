@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useBalance } from '../../providers/BalanceProvider'
 import TonIcon from '../icons/TonIcon.svg'
-import ShipsyIcon from '../icons/shipsyIcon.svg'
+import ShipsyIcon from '../icons/ShipsyIcon.svg'
 
 export default function Header({
   hidden = false,
