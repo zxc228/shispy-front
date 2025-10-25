@@ -92,7 +92,17 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
     <div className="min-h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white flex flex-col">
       {/* scroll area (контент), сохраняем «гуттер» скроллбара */}
       <main className="flex-1 overflow-y-auto px-2.5 pt-2 pb-[calc(152px+env(safe-area-inset-bottom))] [scrollbar-gutter:stable_both-edges]">
-        {view === 'empty' ? (
+        {loading ? (
+          // Skeleton loading state
+          <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
+            <div className="px-1 h-6 w-40 bg-neutral-800/50 rounded animate-pulse" />
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-2xl bg-neutral-800/50 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        ) : view === 'empty' ? (
           <EmptyInventoryBlock
             onAddTreasure={() => {
               setView('choose')
@@ -100,7 +110,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
             }}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
             <h2 className="px-1 text-xl font-medium leading-none text-neutral-50">
               Choose Treasure
             </h2>

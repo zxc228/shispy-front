@@ -59,9 +59,19 @@ export default function TreasurePage() {
       {/* Вкладки */}
       <Tabs active={tab} onChange={(t) => { setTab(t); setSelectedStoreId(null); }} />
 
-      {tab === "my" ? (
+      {loading ? (
+        // Skeleton loading state
+        <div className="animate-[fadeIn_0.3s_ease-out]">
+          <div className="mb-3 h-[120px] rounded-2xl bg-neutral-800/50 animate-pulse" />
+          <Grid3>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-2xl bg-neutral-800/50 animate-pulse" />
+            ))}
+          </Grid3>
+        </div>
+      ) : tab === "my" ? (
         myItems.length ? (
-          <>
+          <div className="animate-[fadeIn_0.3s_ease-out]">
             {/* Слот Add new Treasure */}
             <AddNewTreasureCard onAdd={() => { /* TODO: open add flow */ }} />
             {/* Сетка инвентаря */}
@@ -70,7 +80,7 @@ export default function TreasurePage() {
                 <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
               ))}
             </Grid3>
-          </>
+          </div>
         ) : (
           <EmptyInventory onAdd={() => { /* TODO: open add flow */ }} />
         )

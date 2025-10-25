@@ -98,9 +98,8 @@ export default function ProfilePage() {
       {/* AVATAR + NAME / WALLET */}
       <section className="flex flex-col items-center gap-2 mt-1">
         <div className="w-24 h-24 relative rounded-3xl">
-          <span className="w-14 h-14 left-[48px] top-0 absolute rounded-3xl outline outline-2 outline-offset-[-1.04px] outline-orange-400 blur-[5.21px]" />
           <img
-            className="w-24 h-24 left-0 top-0 absolute rounded-3xl border-2 border-zinc-500 object-cover bg-neutral-200"
+            className="w-24 h-24 rounded-3xl border-2 border-zinc-500 object-cover bg-neutral-200"
             src={avatarSrc}
             alt="avatar"
             referrerPolicy="no-referrer"
@@ -109,19 +108,14 @@ export default function ProfilePage() {
               e.currentTarget.src = EmptyPersonSvg
             }}
           />
-          <span className="w-14 h-14 left-[49px] -top-px absolute overflow-hidden">
-            <span className="w-24 h-24 -left-[48px] top-0 absolute rounded-3xl border-4 border-orange-400" />
-          </span>
-          {/* profile icon badge */}
-          <img src={ProfileSvg} alt="Profile" className="absolute -bottom-1 -right-1 w-6 h-6" />
         </div>
 
         <div className="w-full flex flex-col items-center gap-1">
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
-          {/* If TON is connected, show connected address; otherwise show server-stored value */}
-          <div className="text-center text-neutral-700 text-xs font-normal font-sans">
+          {/* If TON is connected, show connected address (shortened); otherwise show server-stored value */}
+          <div className="text-center text-neutral-700 text-xs font-mono font-normal max-w-[260px] truncate">
             {connectedAddress || wallet || '—'}
           </div>
           <div className="mt-2 flex items-center gap-2">
@@ -179,8 +173,8 @@ export default function ProfilePage() {
             <div className="text-neutral-700 text-xs font-normal font-sans">
               Побед: {profile?.percantage ?? (loading ? '…' : 0)}%
             </div>
-            <div className="px-1 py-0.5 bg-gradient-to-b from-orange-400 to-amber-700 rounded flex items-center">
-              <div className="text-white text-xs font-normal font-sans">{profile?.value ?? 0} TON</div>
+            <div className="text-neutral-50 text-xs font-semibold font-sans">
+              {profile?.value ?? 0} TON
             </div>
           </div>
         </div>
