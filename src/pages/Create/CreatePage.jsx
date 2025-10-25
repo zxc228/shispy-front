@@ -84,7 +84,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
       sessionStorage.setItem('pending_bet', JSON.stringify(betData))
       
       if (onCreateBattle) onCreateBattle(selectedIds)
-      navigate('/lobby', { state: { created: true } })
+      navigate('/lobby/waiting', { replace: true })
     }
   }
 

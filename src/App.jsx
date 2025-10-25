@@ -9,6 +9,7 @@ import AddPage from './pages/Add/AddPage'
 import BattlePage from './pages/Battle/BattlePage'
 import CreatePage from './pages/Create/CreatePage'
 import JoinPage from './pages/Join/JoinPage'
+import WaitingScreen from './pages/Lobby/WaitingScreen'
 import DebugConsole from './components/Debug/DebugConsole'
 
 export default function App() {
@@ -17,10 +18,11 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/live" replace />} />
+            <Route index element={<Navigate to="/profile" replace />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/live" element={<LivePage />} />
             <Route path="/lobby" element={<LobbyPage />} />
+            <Route path="/lobby/waiting" element={<WaitingScreen />} />
             <Route path="/lobby/battle/:id" element={<BattlePage />} />
             <Route path="/treasure" element={<TreasurePage />} />
             <Route path="/profile" element={<ProfilePage />} />

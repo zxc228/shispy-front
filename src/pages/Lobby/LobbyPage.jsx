@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import CreateBattleCTA from '../../components/common/CreateBattleCTA'
+import OnlineCounter from '../../components/common/OnlineCounter'
 import LobbyFilters from './LobbyFilters'
 import LobbyCard from './LobbyCard'
 import { getQueue, getWaitingStatus, cancelLobby } from '../../shared/api/lobby.api'
@@ -161,8 +162,11 @@ export default function LobbyPage() {
         </div>
         */}
 
-        {/* section title */}
-  <div className="mt-2 text-left text-white/90 text-sm tracking-wide">Lobby</div>
+        {/* section title with online counter */}
+        <div className="mt-2 flex items-center justify-between">
+          <div className="text-left text-white/90 text-sm tracking-wide">Lobby</div>
+          <OnlineCounter />
+        </div>
 
         {/* filters */}
         <div className="mt-3">

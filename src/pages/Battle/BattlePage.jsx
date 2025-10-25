@@ -21,6 +21,7 @@ export default function BattlePage() {
   const [grid, setGrid] = useState(() => Array.from({ length: 16 }, (_, i) => ({ id: i, state: /** @type {CellState} */('idle') })))
   const [selectedShipIds, setSelectedShipIds] = useState(/** @type {number[]} */([]))
   const [selectedTargetId, setSelectedTargetId] = useState(/** @type {number|null} */(null))
+  const [attackingCell, setAttackingCell] = useState(/** @type {number|null} */(null)) // Cell being attacked
   const [sheet, setSheet] = useState(/** @type {null|{variant:'win'|'lose', amount:number, gifts?: any[]}} */(null))
   const [firstWinTriggered, setFirstWinTriggered] = useState(false)
   const pollingRef = useRef(/** @type {any} */(null))
@@ -141,6 +142,7 @@ export default function BattlePage() {
     // Mark only my own fired cell on my target grid
     if (isMine && typeof mr.cell === 'number') {
       setGrid((g) => g.map((c) => (c.id === mr.cell ? { ...c, state: mr.result === 'hit' ? 'hit' : 'miss' } : c)))
+      setAttackingCell(null) // Clear attacking animation
     }
     setSelectedTargetId(null)
     if (mr.result === 'hit' && mr.winner) {
@@ -231,6 +233,7 @@ export default function BattlePage() {
   const onFire = async () => {
     if (selectedTargetId == null || !Number.isFinite(gameId)) return
     const fireAt = selectedTargetId
+    setAttackingCell(fireAt) // Show attacking animation
     setMode('myTurnFiring')
     try {
       // Always use realtime socket; server validates and switches turn
@@ -240,6 +243,7 @@ export default function BattlePage() {
       // On error, revert to allow retry
       logger.error('BattlePage: step error', e)
       setMode('myTurn')
+      setAttackingCell(null)
     }
   }
 
@@ -290,6 +294,7 @@ export default function BattlePage() {
               onSelect={handleCellClick}
               showSpinner={mode === 'myTurnFiring' && selectedTargetId === cell.id}
               showBadge={badgeForCell(cell, mode)}
+              isAttacking={attackingCell === cell.id}
             />
           ))}
         </div>

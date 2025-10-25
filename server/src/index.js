@@ -20,8 +20,23 @@ const io = new IOServer(httpServer, {
 const nsp = io.of('/game')
 const manager = new GameManager(io, nsp)
 
+// Broadcast online count every 10 seconds
+function broadcastOnlineCount() {
+  const count = nsp.sockets.size
+  nsp.emit('online_count', { count })
+  console.log(`[STATS] Broadcasting online count: ${count}`)
+}
+
+// Initial broadcast after 2 seconds, then every 10 seconds
+setTimeout(broadcastOnlineCount, 2000)
+setInterval(broadcastOnlineCount, 10000)
+
 nsp.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`)
+  // Send current count immediately to new connection
+  const count = nsp.sockets.size
+  socket.emit('online_count', { count })
+  
   let game = null
   let role = null
 
@@ -64,6 +79,8 @@ nsp.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`[SOCKET] Client disconnected: ${socket.id}`)
     if (game) game.removePlayerBySid(socket.id)
+    // Broadcast updated count after disconnect
+    setTimeout(broadcastOnlineCount, 100)
   })
 })
 

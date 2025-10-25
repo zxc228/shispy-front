@@ -15,6 +15,7 @@ export default function JoinPage() {
 
   const [inventory, setInventory] = useState([])
   const [loading, setLoading] = useState(true)
+  const [joiningBattle, setJoiningBattle] = useState(false) // Loading state for join animation
 
   // Load available gifts (same as CreatePage)
   useEffect(() => {
@@ -76,28 +77,63 @@ export default function JoinPage() {
       logger.warn('JoinPage: invalid queque_id from route param', { id })
       return
     }
-    logger.debug('JoinPage: joinBattle payload', { gifts: giftIds, queque_id: quequeId })
-    const res = await withLoading(() => joinBattle(giftIds, quequeId))
-    logger.debug('JoinPage: joinBattle response', res)
-    const gameId = res?.game_id
-    if (Number.isFinite(gameId)) {
-      // Save bet to sessionStorage for battle page to show on loss
-      const selectedGifts = selectedIds.map(tid => inventory.find(t => t.id === tid)).filter(Boolean)
-      const betData = {
-        gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
-        total: totalTon
+    
+    setJoiningBattle(true) // Show loading animation
+    
+    try {
+      logger.debug('JoinPage: joinBattle payload', { gifts: giftIds, queque_id: quequeId })
+      const res = await withLoading(() => joinBattle(giftIds, quequeId))
+      logger.debug('JoinPage: joinBattle response', res)
+      const gameId = res?.game_id
+      if (Number.isFinite(gameId)) {
+        // Save bet to sessionStorage for battle page to show on loss
+        const selectedGifts = selectedIds.map(tid => inventory.find(t => t.id === tid)).filter(Boolean)
+        const betData = {
+          gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+          total: totalTon
+        }
+        sessionStorage.setItem(`battle_bet_${gameId}`, JSON.stringify(betData))
+        
+        // Wait 1.5s to show success animation
+        setTimeout(() => {
+          navigate(`/lobby/battle/${gameId}`)
+        }, 1500)
+      } else {
+        // Fallback: go back to lobby if no game_id returned
+        setJoiningBattle(false)
+        navigate('/lobby')
       }
-      sessionStorage.setItem(`battle_bet_${gameId}`, JSON.stringify(betData))
-      
-      navigate(`/lobby/battle/${gameId}`)
-    } else {
-      // Fallback: go back to lobby if no game_id returned
-      navigate('/lobby')
+    } catch (e) {
+      logger.error('JoinPage: joinBattle error', e)
+      setJoiningBattle(false)
     }
   }
 
   return (
-    <div className="min-h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white flex flex-col">
+    <div className="min-h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white flex flex-col relative">
+      {/* Joining battle overlay */}
+      {joiningBattle && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-[fadeIn_0.3s_ease-out]">
+          <div className="flex flex-col items-center">
+            <div className="mb-8 relative">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-400/20 to-emerald-600/20 flex items-center justify-center">
+                <div className="text-6xl animate-[bounce_0.6s_ease-in-out_infinite]">
+                  ⚔️
+                </div>
+              </div>
+              {/* Success ripple */}
+              <div className="absolute inset-0 rounded-full border-4 border-green-400/50 animate-[ping_1s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
+            </div>
+            <h1 className="text-3xl font-bold mb-2 text-green-400 animate-[slideUp_0.5s_ease-out]">
+              Joining Battle!
+            </h1>
+            <p className="text-neutral-300 text-center animate-[slideUp_0.5s_ease-out_0.1s_both]">
+              Preparing your strategy...
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* scroll area */}
       <main className="flex-1 overflow-y-auto px-2.5 pt-2 pb-[calc(152px+env(safe-area-inset-bottom))] [scrollbar-gutter:stable_both-edges]">
         {view === 'empty' ? (
