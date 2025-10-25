@@ -19,11 +19,17 @@ export function GameSocketProvider({ children }) {
   // Connect socket and recreate when token changes (Telegram auth may arrive later)
   useEffect(() => {
     try {
-      const url = import.meta.env.VITE_GAME_WS_URL || '/game'
-      logger.info(`GameSocket: connecting to ${url}`, { authToken: !!authToken })
-      const s = io(url, {
+      // VITE_GAME_WS_URL is the transport path (e.g. '/socket.io'). Do NOT use
+      // it as a namespace. Use namespace '/' (or configured namespace) and
+      // pass path option so the client uses the correct transport path when
+      // connecting through the host Nginx proxy.
+      const path = import.meta.env.VITE_GAME_WS_URL || '/socket.io'
+      const namespace = import.meta.env.VITE_GAME_NAMESPACE || '/'
+      logger.info(`GameSocket: connecting namespace=${namespace} path=${path}`, { authToken: !!authToken })
+      const s = io(namespace, {
+        path,
         autoConnect: true,
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
         auth: authToken ? { token: authToken } : undefined,
         reconnection: true,
         reconnectionAttempts: Infinity,

@@ -8,7 +8,12 @@ export const api = axios.create({
 })
 
 // Create instance for same-origin requests (no baseURL)
+// apiLocal is used for same-origin requests from the SPA. In production we
+// proxy API under /api in Nginx, so set baseURL to '/api' so calls like
+// apiLocal.get('/auth/telegram') go to '/api/auth/telegram' instead of the
+// SPA root.
 export const apiLocal = axios.create({
+  baseURL: '/api',
   timeout: 15000,
 })
 
