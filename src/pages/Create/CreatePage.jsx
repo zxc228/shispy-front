@@ -74,6 +74,15 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
     const res = await withLoading(() => createBattle(giftIds))
     logger.debug('CreatePage: createBattle response', res)
     if (res?.status) {
+      // Save bet to sessionStorage for battle page to show on loss
+      const selectedGifts = selectedIds.map(id => inventory.find(t => t.id === id)).filter(Boolean)
+      const betData = {
+        gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+        total: totalTon
+      }
+      // We don't know game_id yet, so save with a temp key and update in lobby
+      sessionStorage.setItem('pending_bet', JSON.stringify(betData))
+      
       if (onCreateBattle) onCreateBattle(selectedIds)
       navigate('/lobby', { state: { created: true } })
     }

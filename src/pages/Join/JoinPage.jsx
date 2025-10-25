@@ -81,6 +81,14 @@ export default function JoinPage() {
     logger.debug('JoinPage: joinBattle response', res)
     const gameId = res?.game_id
     if (Number.isFinite(gameId)) {
+      // Save bet to sessionStorage for battle page to show on loss
+      const selectedGifts = selectedIds.map(tid => inventory.find(t => t.id === tid)).filter(Boolean)
+      const betData = {
+        gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+        total: totalTon
+      }
+      sessionStorage.setItem(`battle_bet_${gameId}`, JSON.stringify(betData))
+      
       navigate(`/lobby/battle/${gameId}`)
     } else {
       // Fallback: go back to lobby if no game_id returned

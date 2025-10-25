@@ -73,7 +73,20 @@ export default function LobbyPage() {
         // If backend says we are in-game, navigate to battle exactly once (host case)
         if (!navigatedRef.current && res?.status === -1 && Number.isFinite(Number(res?.game_id))) {
           navigatedRef.current = true
-          navigate(`/lobby/battle/${Number(res.game_id)}`)
+          const gameId = Number(res.game_id)
+          
+          // Move pending bet to battle-specific storage
+          try {
+            const pending = sessionStorage.getItem('pending_bet')
+            if (pending) {
+              sessionStorage.setItem(`battle_bet_${gameId}`, pending)
+              sessionStorage.removeItem('pending_bet')
+            }
+          } catch (e) {
+            // ignore
+          }
+          
+          navigate(`/lobby/battle/${gameId}`)
           return
         }
         // if we have a fresh justCreated flag (TTL 12s), keep waiting on even if server says false

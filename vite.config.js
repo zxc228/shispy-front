@@ -19,6 +19,20 @@ export default defineConfig(({ mode }) => {
         protocol: 'wss',
       },
       proxy: {
+        // Socket.IO default engine path; proxy WS to game server
+        '/socket.io': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+        // Real-time game server (Socket.IO) via same-origin path
+        '/game': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
         '/api': {
           target: apiBase,
           changeOrigin: true,

@@ -4,9 +4,10 @@ import StatusBar from './StatusBar'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import BattleCell from './BattleCell'
-import { getWaitingStatus, setTreasureField, step as apiStep } from '../../shared/api/lobby.api'
+// REST battle APIs removed from this component in realtime mode
 import { logger } from '../../shared/logger'
 import { useTelegram } from '../../providers/TelegramProvider'
+import useBattleSocket from '../../hooks/useBattleSocket'
 
 /** @typedef {"idle"|"selected"|"hit"|"miss"|"disabled"} CellState */
 /** @typedef {"selectShip"|"selectShipSelected"|"selectShipWaiting"|"myTurn"|"myTurnSelected"|"myTurnFiring"|"myTurnMiss"|"enemyTurn"|"myTurnHit"|"win"} BattleMode */
@@ -14,7 +15,8 @@ import { useTelegram } from '../../providers/TelegramProvider'
 export default function BattlePage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const TIMER_ENABLED = false
+  // In realtime mode, timer comes from server
+  const [timerEnabled, setTimerEnabled] = useState(false)
   const [mode, setMode] = useState(/** @type {BattleMode} */('selectShip'))
   const [grid, setGrid] = useState(() => Array.from({ length: 16 }, (_, i) => ({ id: i, state: /** @type {CellState} */('idle') })))
   const [selectedShipIds, setSelectedShipIds] = useState(/** @type {number[]} */([]))
@@ -25,6 +27,25 @@ export default function BattlePage() {
   const gameId = useMemo(() => Number(id), [id])
   const [secondsLeft, setSecondsLeft] = useState(25)
   const { user } = useTelegram?.() || { user: null }
+  const battle = useBattleSocket(gameId)
+  const [placedSecret, setPlacedSecret] = useState(false)
+  const [tossInfo, setTossInfo] = useState(null)
+  const [tossShown, setTossShown] = useState(false) // Track if toss was already shown
+  const [myBet, setMyBet] = useState(null) // Store player's bet for showing on loss
+
+  // Load player's bet from sessionStorage (saved during create/join)
+  useEffect(() => {
+    try {
+      const betKey = `battle_bet_${gameId}`
+      const stored = sessionStorage.getItem(betKey)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        setMyBet(parsed) // { gifts: [...], total: number }
+      }
+    } catch (e) {
+      logger.warn('BattlePage: failed to load bet from storage', e)
+    }
+  }, [gameId])
 
   // derived title and CTA
   const { title, showTimer } = useMemo(() => {
@@ -53,43 +74,13 @@ export default function BattlePage() {
   // disable interactions in these modes
   const gridDisabled = ['selectShipWaiting', 'myTurnFiring', 'enemyTurn', 'win'].includes(mode)
 
-  // Poll game status to detect if opponent ended the game
-  useEffect(() => {
-    let cancelled = false
-    if (!Number.isFinite(gameId)) return
-    // Only poll while game is active and we haven't won yet
-    if (sheet?.variant === 'win') return
-    const tick = async () => {
-      try {
-        const res = await getWaitingStatus()
-        if (cancelled) return
-        // In-game: backend returns { status: -1, game_id }
-        if (res && typeof res.status !== 'undefined') {
-          if (res.status === -1) {
-            // still in some game; if different game id, ignore
-            if (Number(res.game_id) !== gameId) {
-              // another game started; we can navigate to that game
-              // but to be safe, ignore auto-navigation here
-            }
-          } else {
-            // Not in game anymore -> if we haven't won, treat as lose
-            if (!sheet) {
-              setSheet({ variant: 'lose', amount: 0 })
-            }
-          }
-        }
-      } catch (e) {
-        // ignore transient errors
-      } finally {
-        if (!cancelled) pollingRef.current = setTimeout(tick, 3000)
-      }
-    }
-    tick()
-    return () => { cancelled = true; if (pollingRef.current) clearTimeout(pollingRef.current) }
-  }, [gameId, sheet])
+  // Disable legacy polling entirely in realtime migration
+  useEffect(() => { return () => {} }, [])
 
-  // Turn timer: run countdown on relevant modes
+  // Turn timer (fallback only): run countdown on relevant modes when not realtime
   useEffect(() => {
+    if (battle.useRealtime) return
+    const TIMER_ENABLED = false
     if (!TIMER_ENABLED) return
     const timedModes = new Set(['myTurn', 'myTurnSelected', 'myTurnFiring', 'enemyTurn'])
     if (!timedModes.has(mode)) return
@@ -99,6 +90,107 @@ export default function BattlePage() {
     }, 1000)
     return () => clearInterval(t)
   }, [mode])
+
+  // Realtime mapping: phase/turn -> UI mode and timer seconds
+  useEffect(() => {
+    if (!battle.useRealtime) return
+    // enable server timer
+    setTimerEnabled(true)
+    // coin toss overlay - show only once per game
+    if (battle.toss && !tossShown) {
+      setTossInfo(battle.toss)
+      setTossShown(true)
+      setTimeout(() => setTossInfo(null), 2500) // longer duration for animation
+    }
+    // seconds left from server per role
+    if (battle.role === 'a') setSecondsLeft(Math.ceil((battle.timeLeft.a || 0) / 1000))
+    if (battle.role === 'b') setSecondsLeft(Math.ceil((battle.timeLeft.b || 0) / 1000))
+
+    // phase mapping
+    if (battle.phase === 'placing') {
+      setMode(placedSecret ? 'selectShipWaiting' : 'selectShip')
+      return
+    }
+    if (battle.phase === 'toss') {
+      // freeze interactions briefly
+      setMode('enemyTurn')
+      return
+    }
+    if (battle.phase === 'turn_a' || battle.phase === 'turn_b') {
+      const myTurn = battle.role && battle.turn && (battle.role === battle.turn)
+      setMode((prev) => {
+        if (myTurn) {
+          return prev === 'myTurnSelected' ? 'myTurnSelected' : 'myTurn'
+        }
+        return 'enemyTurn'
+      })
+      return
+    }
+    if (battle.phase === 'finished') {
+      // gameOver handled below
+      return
+    }
+  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.toss, placedSecret, tossShown])
+
+  // Apply move results to grid and finish state in realtime
+  useEffect(() => {
+    if (!battle.useRealtime) return
+    if (!battle.lastMove) return
+    const mr = battle.lastMove
+    const isMine = mr.by === battle.role
+    // Mark only my own fired cell on my target grid
+    if (isMine && typeof mr.cell === 'number') {
+      setGrid((g) => g.map((c) => (c.id === mr.cell ? { ...c, state: mr.result === 'hit' ? 'hit' : 'miss' } : c)))
+    }
+    setSelectedTargetId(null)
+    if (mr.result === 'hit' && mr.winner) {
+      // finish will also trigger game_over; set mode to win if I'm winner
+      if (mr.winner === battle.role) {
+        // Parse rewards from move_result
+        const rewards = mr.rewards || []
+        const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
+        setSheet({ variant: 'win', amount: Number(total.toFixed(2)), gifts: rewards })
+        setMode('win')
+      }
+    }
+  }, [battle.useRealtime, battle.lastMove, battle.role])
+
+  // Recover UI on server errors (e.g., step failed)
+  useEffect(() => {
+    if (!battle.useRealtime) return
+    if (!battle.lastError) return
+    // Reset firing state back to myTurn so user can retry
+    setMode('myTurn')
+  }, [battle.useRealtime, battle.lastError])
+
+  // Show win/lose sheet when server ends the game
+  useEffect(() => {
+    if (!battle.useRealtime) return
+    if (!battle.gameOver) return
+    const win = battle.gameOver.winner === battle.role
+    
+    if (win) {
+      // Winner: show rewards from server
+      const rewards = battle.gameOver.rewards || []
+      const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
+      setSheet({ 
+        variant: 'win', 
+        amount: Number(total.toFixed(2)),
+        gifts: rewards
+      })
+    } else {
+      // Loser: show what was bet and lost
+      const lostGifts = myBet?.gifts || []
+      const lostTotal = myBet?.total || 0
+      setSheet({
+        variant: 'lose',
+        amount: Number(lostTotal.toFixed(2)),
+        gifts: lostGifts
+      })
+    }
+    
+    setMode(win ? 'win' : 'enemyTurn')
+  }, [battle.useRealtime, battle.gameOver, battle.role, myBet])
 
   const handleCellClick = (cellId) => {
     if (gridDisabled) return
@@ -125,31 +217,14 @@ export default function BattlePage() {
       return
     }
     try {
-      setMode('selectShipWaiting')
+      // Always use realtime socket; server also persists to backend
+      setPlacedSecret(true)
       const treasureCell = selectedShipIds[0]
-      logger.debug('BattlePage: setTreasureField request', { gameId, field: treasureCell })
-      // Retry up to 3 times on transient 5xx
-      let res
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          res = await setTreasureField(gameId, treasureCell)
-          break
-        } catch (e) {
-          const status = e?.status || e?.original?.status
-          if (status && status >= 500 && status < 600 && attempt < 3) {
-            await new Promise((r) => setTimeout(r, 300 * attempt))
-            continue
-          }
-          throw e
-        }
-      }
-      logger.debug('BattlePage: setTreasureField response', res)
-      // proceed regardless of response status to avoid blocking UI
-      setMode('myTurn')
+      battle.placeSecret(treasureCell)
+      setMode('selectShipWaiting')
     } catch (e) {
       // fallback to allow playing; keep going
       logger.error('BattlePage: setTreasureField error', e)
-      setMode('myTurn')
     }
   }
 
@@ -158,37 +233,9 @@ export default function BattlePage() {
     const fireAt = selectedTargetId
     setMode('myTurnFiring')
     try {
-      // Retry step up to 2 times on 5xx; step is idempotent if server failed before state write
-      let res
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const currentTuid = (user && typeof user.id !== 'undefined') ? Number(user.id) : undefined
-          res = await apiStep(gameId, fireAt, currentTuid)
-          break
-        } catch (e) {
-          const status = e?.status || e?.original?.status
-          if (status && status >= 500 && status < 600 && attempt < 2) {
-            await new Promise((r) => setTimeout(r, 250 * attempt))
-            continue
-          }
-          throw e
-        }
-      }
-      // If array => win with gifts
-      if (Array.isArray(res)) {
-        const total = res.reduce((sum, g) => sum + Number(g?.value || 0), 0)
-        setGrid((g) => g.map((c) => (c.id === fireAt ? { ...c, state: 'hit' } : c)))
-        setSelectedTargetId(null)
-        setSheet({ variant: 'win', amount: Number(total.toFixed(2)), gifts: res })
-        setMode('win')
-        return
-      }
-      // Otherwise, treat as miss
-      setGrid((g) => g.map((c) => (c.id === fireAt ? { ...c, state: 'miss' } : c)))
-      setSelectedTargetId(null)
-      setMode('enemyTurn')
-      // small delay before we allow another move
-      setTimeout(() => setMode('myTurn'), 1500)
+      // Always use realtime socket; server validates and switches turn
+      const moveId = `${Date.now()}-${fireAt}`
+      battle.move(fireAt, moveId)
     } catch (e) {
       // On error, revert to allow retry
       logger.error('BattlePage: step error', e)
@@ -227,7 +274,10 @@ export default function BattlePage() {
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
-  <StatusBar title={title} showTimer={TIMER_ENABLED && showTimer} secondsLeft={secondsLeft} onExit={() => navigate('/lobby')} />
+  <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} onExit={() => {
+    if (battle.useRealtime) battle.concede()
+    navigate('/lobby')
+  }} />
 
         {/* 4x4 grid */}
         <div className="mt-3 grid grid-cols-4 gap-1 px-2.5 place-items-center">
@@ -244,6 +294,22 @@ export default function BattlePage() {
           ))}
         </div>
       </div>
+
+      {/* Coin toss overlay */}
+      {tossInfo && (
+        <div className="fixed inset-0 z-50 grid place-items-center pointer-events-none bg-black/40">
+          <div className="flex flex-col items-center gap-4 animate-[fadeIn_0.3s_ease-out]">
+            {/* Spinning coin */}
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500 shadow-[0_0_40px_rgba(251,191,36,0.6)] animate-[spin_1s_ease-in-out] flex items-center justify-center text-4xl">
+              🪙
+            </div>
+            {/* Result text */}
+            <div className="px-6 py-3 rounded-2xl bg-neutral-900/95 border-2 border-amber-400/50 text-white text-lg font-bold shadow-lg animate-[slideUp_0.4s_ease-out_0.8s_both]">
+              {battle.role && tossInfo.firstTurn === battle.role ? '🎯 You start!' : '⏳ Opponent starts'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fixed CTA */}
       {ctaVisible && (
@@ -288,9 +354,10 @@ export default function BattlePage() {
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2 flex-1 overflow-y-auto pr-1">
-                {sheet.variant === 'win' && Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
+                {Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
+                  // Show actual gifts (either won or lost)
                   sheet.gifts.map((g, i) => (
-                    <div key={`${g?.gid ?? i}-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden">
+                    <div key={`gift-${g?.gid ?? i}-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden">
                       {g?.photo ? (
                         <img src={g.photo} alt={g?.slug || 'Gift'} className="w-full h-full object-cover" />
                       ) : (
@@ -299,9 +366,10 @@ export default function BattlePage() {
                     </div>
                   ))
                 ) : (
+                  // Show empty placeholders if no gifts data
                   Array.from({ length: 6 }, (_, i) => (
-                    <div key={`ph-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
-                      <img src={EmptyGiftSvg} alt="Gift" className="w-10 h-10 opacity-80" />
+                    <div key={`empty-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
+                      <img src={EmptyGiftSvg} alt="Empty" className="w-10 h-10 opacity-40" />
                     </div>
                   ))
                 )}

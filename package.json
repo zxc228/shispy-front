@@ -8,8 +8,11 @@
     "dev:tunnel": "vite --mode tunnel",
     "build": "vite build",
     "preview": "vite preview",
-    "tunnel": "cloudflared tunnel --url http://localhost:5173",
-    "dev:twa": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\""
+    "tunnel": "wait-on http://localhost:5173 && cloudflared tunnel --url http://localhost:5173",
+    "dev:twa": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "dev:twa:game": "concurrently \"npm:dev:tunnel\" \"npm:tunnel\" \"npm:dev:server\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
@@ -19,6 +22,7 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
     "react-spinners": "^0.17.0",
+    "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.14"
   },
   "devDependencies": {
@@ -32,6 +36,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "wait-on": "^9.0.1"
   }
 }

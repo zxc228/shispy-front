@@ -1,28 +1,49 @@
 export default function StatusBar({ title, showTimer, secondsLeft = 0, onExit }) {
   const mm = String(Math.floor(Math.max(0, secondsLeft) / 60)).padStart(2, '0')
   const ss = String(Math.max(0, secondsLeft) % 60).padStart(2, '0')
+  // Progress bar: max 25s per turn, calculate percentage
+  const MAX_TURN_TIME = 25
+  const percentage = Math.min(100, Math.max(0, (secondsLeft / MAX_TURN_TIME) * 100))
+  const isLowTime = secondsLeft <= 5
+  
   return (
     <div className="px-2.5">
-      <div className="w-full py-2 rounded-2xl flex items-center justify-between gap-2">
-        <div className="text-xl font-medium leading-none text-neutral-50">{title}</div>
-        <div className="flex items-center gap-2">
-          {showTimer && (
-            <div className="relative inline-flex items-center">
-              <span className="absolute left-0 top-0 bottom-0 my-auto w-1 h-3 rounded-full bg-orange-400" />
-              <span className="relative rounded-full px-3 py-1 bg-neutral-800 text-white/90 text-xs">{mm}:{ss}</span>
-            </div>
-          )}
-          {onExit && (
-            <button
-              type="button"
-              onClick={onExit}
-              className="h-8 px-2.5 rounded-full bg-neutral-800 text-white/90 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
-              aria-label="Concede and exit"
-            >
-              Concede
-            </button>
-          )}
+      <div className="w-full py-2 rounded-2xl flex flex-col gap-2">
+        {/* Title and controls */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-xl font-medium leading-none text-neutral-50">{title}</div>
+          <div className="flex items-center gap-2">
+            {showTimer && (
+              <div className="relative inline-flex items-center gap-2">
+                <span className={`text-sm font-bold tabular-nums ${isLowTime ? 'text-red-400 animate-pulse' : 'text-white/90'}`}>
+                  {mm}:{ss}
+                </span>
+              </div>
+            )}
+            {onExit && (
+              <button
+                type="button"
+                onClick={onExit}
+                className="h-8 px-2.5 rounded-full bg-neutral-800 text-white/90 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+                aria-label="Concede and exit"
+              >
+                Concede
+              </button>
+            )}
+          </div>
         </div>
+        
+        {/* Progress bar */}
+        {showTimer && (
+          <div className="w-full h-1.5 rounded-full bg-neutral-800/80 overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+                isLowTime ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-orange-400 to-amber-500'
+              }`}
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
