@@ -17,12 +17,12 @@ git clone https://github.com/your-username/shispy-front.git .
 # 4. Настрой переменные окружения
 nano .env.production
 # Укажи:
-# VITE_BACKEND_URL=https://твой-django-backend.com
+# VITE_BACKEND_URL=http://localhost:8123  (FastAPI уже работает)
 # VITE_GAME_WS_URL=/game
 
 nano docker-compose.yml
 # Укажи:
-# BACKEND_URL=http://твой-django-backend:8000
+# BACKEND_URL=http://host.docker.internal:8123
 
 # 5. Запусти контейнеры
 docker compose up -d --build
@@ -37,13 +37,13 @@ server {
     listen 80;
     server_name твой-домен.com;
 
-    # Frontend
+    # Frontend (Docker контейнер)
     location / {
         proxy_pass http://localhost:80;
         proxy_set_header Host $host;
     }
 
-    # Socket.IO
+    # Socket.IO (Docker контейнер)
     location /socket.io/ {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
@@ -52,6 +52,12 @@ server {
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
+    }
+
+    # FastAPI (уже работает на порту 8123)
+    location /api/ {
+        proxy_pass http://localhost:8123/;
+        proxy_set_header Host $host;
     }
 }
 ```
@@ -73,9 +79,12 @@ sudo systemctl reload nginx
 1. **Frontend** (nginx:alpine) - порт 80 - статические файлы React
 2. **Game Server** (node:20-alpine) - порт 3001 - Socket.IO WebSocket
 
+**FastAPI Backend** - уже работает на порту 8123 (не в Docker)
+
 **Nginx** проксирует:
 - `/` → Frontend контейнер (порт 80)
 - `/socket.io/` → Game Server контейнер (порт 3001)
+- `/api/` → FastAPI (порт 8123)
 
 ---
 
@@ -143,16 +152,16 @@ docker compose build --no-cache
 Сервер (Ubuntu/Debian):
 ├── Docker Desktop / Docker Engine
 ├── Nginx (reverse proxy)
+├── FastAPI (порт 8123) - УЖЕ РАБОТАЕТ ✅
 ├── /var/www/shispy/
 │   ├── Frontend контейнер (порт 80)
 │   └── Game Server контейнер (порт 3001)
-└── Django Backend (отдельно, порт 8000)
 ```
 
 **Nginx маршрутизация:**
 - `http://твой-домен.com/` → Frontend
 - `ws://твой-домен.com/socket.io/` → Game Server
-- `http://твой-домен.com/api/` → Django (опционально)
+- `http://твой-домен.com/api/` → FastAPI (порт 8123)
 
 ---
 

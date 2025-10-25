@@ -26,7 +26,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - BACKEND_URL=${BACKEND_URL:-http://your-django-backend.com}
+      - BACKEND_URL=http://host.docker.internal:8123  # FastAPI на хосте
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Для доступа к FastAPI на хосте
     restart: unless-stopped
     networks:
       - shispy-network

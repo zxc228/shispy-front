@@ -8,19 +8,16 @@
 ┌─────────────────────────────────────────┐
 │         Nginx (Reverse Proxy)           │
 │         Port 80/443 (HTTP/HTTPS)        │
-└───────────┬─────────────┬───────────────┘
-            │             │
-    ┌───────▼──────┐  ┌──▼──────────────┐
-    │   Frontend   │  │  Socket.IO      │
-    │   (Static)   │  │  Game Server    │
-    │   Port 80    │  │  Port 3001      │
-    └──────────────┘  └─────────┬───────┘
-                                │
-                        ┌───────▼────────┐
-                        │ Django Backend │
-                        │   Port 8000    │
-                        └────────────────┘
+└───────────┬─────────────┬───────┬───────┘
+            │             │       │
+    ┌───────▼──────┐  ┌──▼───┐  ┌▼────────────┐
+    │   Frontend   │  │Socket│  │   FastAPI   │
+    │   (Docker)   │  │  IO  │  │  (Running)  │
+    │   Port 80    │  │ 3001 │  │  Port 8123  │
+    └──────────────┘  └──────┘  └─────────────┘
 ```
+
+**Важно:** FastAPI уже развернут на том же сервере на порту 8123.
 
 ## 🛠️ Что нужно на сервере
 
@@ -76,15 +73,16 @@ docker compose version
 Отредактируй `.env.production`:
 
 ```env
-VITE_BACKEND_URL=https://your-api.com
-VITE_SOCKET_URL=wss://your-domain.com
+# FastAPI уже на порту 8123
+VITE_BACKEND_URL=http://localhost:8123
+VITE_GAME_WS_URL=/game
 ```
 
 Отредактируй `docker-compose.yml`:
 
 ```yaml
 environment:
-  - BACKEND_URL=http://your-django-backend:8000
+  - BACKEND_URL=http://host.docker.internal:8123  # FastAPI на хосте
 ```
 
 ### 3. Копирование файлов на сервер
@@ -143,14 +141,14 @@ docker compose logs -f
 sudo nano /etc/nginx/sites-available/shispy
 ```
 
-Вставь конфигурацию:
+Вставь конфигурацию (или используй файл `nginx-server.conf`):
 
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;  # Твой домен
 
-    # Frontend
+    # Frontend (Docker контейнер на порту 80)
     location / {
         proxy_pass http://localhost:80;
         proxy_set_header Host $host;
@@ -159,7 +157,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Socket.IO WebSocket
+    # Socket.IO WebSocket (Docker контейнер на порту 3001)
     location /socket.io/ {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
@@ -173,6 +171,15 @@ server {
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
+    }
+
+    # FastAPI Backend (уже работает на порту 8123)
+    location /api/ {
+        proxy_pass http://localhost:8123/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
