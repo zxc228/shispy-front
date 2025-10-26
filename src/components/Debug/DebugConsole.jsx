@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { logger } from '../../shared/logger'
 
 export default function DebugConsole() {
+  // Скрыто для теста
+  return null
+  
+  /* eslint-disable */
   const [open, setOpen] = useState(false)
   const [logs, setLogs] = useState(() => logger.getBuffer())
 
