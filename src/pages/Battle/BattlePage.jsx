@@ -36,6 +36,18 @@ export default function BattlePage() {
   const [tossShown, setTossShown] = useState(false) // Track if toss was already shown
   const [myBet, setMyBet] = useState(null) // Store player's bet for showing on loss
 
+  // Normalize gift photos: ensure http/data prefix for base64 payloads
+  const normalizeGifts = (arr) => {
+    if (!Array.isArray(arr)) return []
+    return arr.map((g) => {
+      const raw = g?.photo || ''
+      const photo = typeof raw === 'string' && raw.length > 0
+        ? (raw.startsWith('http') || raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`)
+        : ''
+      return { ...g, photo }
+    })
+  }
+
   // Load player's bet from sessionStorage (saved during create/join)
   useEffect(() => {
     try {
@@ -166,7 +178,7 @@ export default function BattlePage() {
       // finish will also trigger game_over; set mode to win if I'm winner
       if (mr.winner === battle.role) {
         // Parse rewards from move_result
-        const rewards = mr.rewards || []
+        const rewards = normalizeGifts(mr.rewards || [])
         const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
         setSheet({ variant: 'win', amount: Number(total.toFixed(2)), gifts: rewards })
         setShowConfetti(true) // Show confetti on win!
@@ -191,7 +203,7 @@ export default function BattlePage() {
     
     if (win) {
       // Winner: show rewards from server
-      const rewards = battle.gameOver.rewards || []
+      const rewards = normalizeGifts(battle.gameOver.rewards || [])
       const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
       setSheet({ 
         variant: 'win', 

@@ -40,13 +40,132 @@ export default function LobbyPage() {
       // Map API to Room shape
       const mapped = Array.isArray(list) ? list.map((item) => {
         const betArr = Array.isArray(item?.bet) ? item.bet : []
-        const minBet = betArr.length > 0 ? Number(betArr[0]?.value || 0) : 0
+        
+        // Decode hex-encoded string to base64 (handles backend's \x89PNG format)
+        const hexToBase64 = (hexStr) => {
+          try {
+            let cleaned = hexStr
+            
+            // If it starts with XHg (which is base64 of "\x89P..."), decode base64 first
+            if (cleaned.startsWith('XHg')) {
+              const decoded = atob(cleaned)
+              // decoded выглядит как "\\x89" + затем последовательность HEX символов, например "504E0D0A1A0A..."
+              let bytes = []
+              // 1) вытащим все \\xNN байты
+              let rest = decoded.replace(/\\x([0-9A-Fa-f]{2})/g, (_, hh) => {
+                bytes.push(parseInt(hh, 16))
+                return ''
+              })
+              // 2) оставшаяся строка — это сплошной HEX, распарсим его попарно
+              rest = (rest || '').replace(/[^0-9A-Fa-f]/g, '')
+              for (let i = 0; i + 1 < rest.length; i += 2) {
+                const hx = rest.substr(i, 2)
+                if (/^[0-9A-Fa-f]{2}$/.test(hx)) {
+                  bytes.push(parseInt(hx, 16))
+                }
+              }
+              if (bytes.length === 0) return null
+              let binary = ''
+              for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+              return btoa(binary)
+            }
+            
+            // Handle \x prefixed hex strings (e.g., "\x89PNG...")
+            if (cleaned.startsWith('\\x')) {
+              cleaned = cleaned.replace(/\\x/g, '')
+              const bytes = []
+              for (let i = 0; i < cleaned.length; i += 2) {
+                const hex = cleaned.substr(i, 2)
+                if (hex.length === 2 && /^[0-9a-fA-F]{2}$/.test(hex)) {
+                  bytes.push(parseInt(hex, 16))
+                }
+              }
+              let binary = ''
+              for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i])
+              }
+              return btoa(binary)
+            }
+            
+            return null
+          } catch (e) {
+            logger.warn('LobbyPage: failed to decode hex photo', e)
+            return null
+          }
+        }
+
+        // normalize possible gift photo sources and base64
+        const normalizePhoto = (rawCandidate) => {
+          if (!rawCandidate) return ''
+          if (typeof rawCandidate !== 'string') return ''
+          const raw = rawCandidate
+          if (!raw || raw === 'null' || raw === 'undefined') return ''
+          if (raw.startsWith('http') || raw.startsWith('data:')) return raw
+          // Heuristic: if it's a UUID gid, not an image
+          if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(raw)) return ''
+          // Heuristic: short strings likely not base64
+          if (raw.length < 64) return ''
+          
+          // Check if it's hex-encoded binary (starts with \x or XHg or looks like hex pairs)
+          if (raw.startsWith('\\x') || raw.startsWith('XHg')) {
+            const base64 = hexToBase64(raw)
+            if (base64) {
+              return `data:image/png;base64,${base64}`
+            }
+            return ''
+          }
+          
+          // Basic base64 chars check (non-strict)
+          if (!/^[A-Za-z0-9+/=]+$/.test(raw)) return ''
+          return `data:image/png;base64,${raw}`
+        }
+
+        // deep search for an image-like string inside unknown object shapes
+        const extractImageDeep = (obj, depth = 2) => {
+          if (!obj || typeof obj !== 'object' || depth < 0) return ''
+          // Prefer obvious keys first
+          const direct = ['photo', 'photo_url', 'image', 'img', 'base64', 'photo_base64', 'thumbnail', 'thumb']
+            .map((k) => obj?.[k])
+            .find((v) => typeof v === 'string' && normalizePhoto(v))
+          if (typeof direct === 'string' && normalizePhoto(direct)) return normalizePhoto(direct)
+          // Then scan nested objects/arrays
+          for (const k of Object.keys(obj)) {
+            const v = obj[k]
+            if (typeof v === 'string') {
+              const n = normalizePhoto(v)
+              if (n) return n
+            } else if (v && typeof v === 'object') {
+              const n = extractImageDeep(v, depth - 1)
+              if (n) return n
+            }
+          }
+          return ''
+        }
+
+        const minBet = betArr.length > 0 ? Number((betArr[0]?.value ?? betArr[0]?.price ?? 0)) : 0
         const giftCount = betArr.length
-        const giftPhotos = betArr.slice(0, 3).map((b) => {
-          const raw = b?.photo || ''
-          if (!raw) return ''
-          return (raw.startsWith('http') || raw.startsWith('data:')) ? raw : `data:image/png;base64,${raw}`
+        const giftPhotos = betArr.slice(0, 3).map((b, idx) => {
+          if (!b) return ''
+          if (typeof b === 'string') {
+            const result = normalizePhoto(b)
+            logger.debug(`LobbyPage: gift ${idx} string conversion`, { hasResult: !!result, sample: b.slice(0, 50) })
+            return result
+          }
+          if (typeof b === 'object') {
+            // try common keys then deep
+            const photoField = b.photo || b.photo_url || b.image || b.img || b.base64 || b.photo_base64 || b.thumbnail || b.thumb
+            logger.debug(`LobbyPage: gift ${idx} object`, { 
+              hasPhotoField: !!photoField, 
+              photoSample: photoField ? String(photoField).slice(0, 50) : 'none' 
+            })
+            const direct = normalizePhoto(photoField)
+            const result = direct || extractImageDeep(b)
+            logger.debug(`LobbyPage: gift ${idx} final result`, { hasResult: !!result, resultSample: result ? result.slice(0, 80) : 'none' })
+            return result
+          }
+          return ''
         })
+
         return {
           id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
           host: item?.username || 'Pirate',
@@ -55,7 +174,7 @@ export default function LobbyPage() {
           ton: Number(item?.value ?? 0),
           giftCount,
           giftPhotos,
-          photo: typeof item?.photo_url === 'string' ? item.photo_url : '',
+          photo: normalizePhoto(item?.photo_url) || '',
         }
       }) : []
       
