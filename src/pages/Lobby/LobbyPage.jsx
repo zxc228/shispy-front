@@ -39,17 +39,22 @@ export default function LobbyPage() {
       const list = await withLoading(() => getQueue())
       // Map API to Room shape
       const mapped = Array.isArray(list) ? list.map((item) => {
-        const minBet = Array.isArray(item?.bet) && item.bet.length > 0
-          ? Number(item.bet[0]?.value || 0)
-          : 0
-        const gifts = (Array.isArray(item?.bet) ? item.bet : []).map((b) => b?.slug || 'G')
+        const betArr = Array.isArray(item?.bet) ? item.bet : []
+        const minBet = betArr.length > 0 ? Number(betArr[0]?.value || 0) : 0
+        const giftCount = betArr.length
+        const giftPhotos = betArr.slice(0, 3).map((b) => {
+          const raw = b?.photo || ''
+          if (!raw) return ''
+          return (raw.startsWith('http') || raw.startsWith('data:')) ? raw : `data:image/png;base64,${raw}`
+        })
         return {
           id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
           host: item?.username || 'Pirate',
           roomNo: String(item?.queque_id ?? '00000').padStart(5, '0'),
           minBet,
           ton: Number(item?.value ?? 0),
-          gifts,
+          giftCount,
+          giftPhotos,
           photo: typeof item?.photo_url === 'string' ? item.photo_url : '',
         }
       }) : []

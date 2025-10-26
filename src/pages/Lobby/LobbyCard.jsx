@@ -48,19 +48,24 @@ export default function LobbyCard({ room, onJoin, isNew = false }) {
       </div>
 
       {/* body */}
-  <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {/* gifts preview (fixed width to stabilize Join button position) */}
         <div className="flex items-center gap-2 w-40 shrink-0">
-          {room.gifts.slice(0, 2).map((g, i) => (
+          {(room.giftPhotos || []).slice(0, 2).map((src, i) => (
             <div key={i} className="w-12 h-12 rounded-[10px] border border-zinc-500 bg-neutral-900 flex items-center justify-center overflow-hidden">
-              <img src={TreasureSvg} alt="Gift" className="w-6 h-6 opacity-80" />
+              <img
+                src={src || TreasureSvg}
+                alt="Gift"
+                className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = TreasureSvg }}
+              />
             </div>
           ))}
-          {room.gifts.length > 2 && (
+          {room.giftCount > 2 && (
             <div className="relative w-12 h-12 rounded-[10px] outline outline-1 outline-neutral-50 bg-neutral-900 flex items-center justify-center">
               <div className="absolute inset-0 bg-neutral-900/60 rounded-[10px]" />
               <div className="relative flex flex-col items-center justify-center leading-none">
-                <div className="text-sm text-white font-medium">+{room.gifts.length - 2}</div>
+                <div className="text-sm text-white font-medium">+{room.giftCount - 2}</div>
                 <div className="text-xs text-white/50">more</div>
               </div>
             </div>

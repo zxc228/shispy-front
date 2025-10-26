@@ -28,8 +28,11 @@ export async function getGifts() {
   }
 }
 
-// POST /lobby/create_battle { gifts: number[] } -> { status: boolean }
+// POST /lobby/create_battle { gifts: string[] } -> { status: boolean }
 export async function createBattle(gifts) {
+  if (!Array.isArray(gifts) || gifts.length === 0) {
+    throw new Error('At least one gift must be selected to create a battle')
+  }
   const payload = { gifts }
   const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
   if (useSameOrigin) {
@@ -78,16 +81,19 @@ export async function cancelLobby() {
   }
 }
 
-// POST /lobby/set_filed { game_id, field } -> { status: boolean }
-export async function setTreasureField(game_id, field) {
+// POST /lobby/set_field { game_id, field } -> { status: boolean }
+// Optional header Payment-Id must be provided when required by backend billing
+export async function setTreasureField(game_id, field, paymentId = null) {
   const payload = { game_id, field }
   const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
-  const config = { headers: { 'Content-Type': 'application/json' } }
+  const headers = { 'Content-Type': 'application/json' }
+  if (paymentId) headers['Payment-Id'] = paymentId
+  const config = { headers }
   if (useSameOrigin) {
-    const res = await apiLocal.post('/lobby/set_filed', payload, config)
+    const res = await apiLocal.post('/lobby/set_field', payload, config)
     return res.data
   } else {
-    const res = await api.post('/lobby/set_filed', payload, config)
+    const res = await api.post('/lobby/set_field', payload, config)
     return res.data
   }
 }

@@ -26,11 +26,19 @@ export default function JoinPage() {
         const res = await withLoading(() => getGifts())
         if (cancelled) return
         const gifts = Array.isArray(res?.gifts) ? res.gifts : []
-        const mapped = gifts.map((g) => ({
-          id: String(g?.gid ?? ''),
-          image: g?.photo || null,
-          priceTON: Number(g?.value ?? 0),
-        }))
+        const mapped = gifts.map((g) => {
+          const rawPhoto = g?.photo || null
+          const image = typeof rawPhoto === 'string' && rawPhoto.length > 0
+            ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:')
+                ? rawPhoto
+                : `data:image/png;base64,${rawPhoto}`)
+            : null
+          return {
+            id: String(g?.gid ?? ''),
+            image,
+            priceTON: Number(g?.value ?? 0),
+          }
+        })
         setInventory(mapped)
       } finally {
         if (!cancelled) setLoading(false)
@@ -71,7 +79,8 @@ export default function JoinPage() {
 
   const handleJoin = async () => {
     if (!selectedCount) return
-    const giftIds = selectedIds.map((tid) => Number(tid)).filter((n) => Number.isFinite(n))
+    // Backend expects array of gid strings
+    const giftIds = [...selectedIds]
     const quequeId = Number(id)
     if (!Number.isFinite(quequeId)) {
       logger.warn('JoinPage: invalid queque_id from route param', { id })
@@ -89,7 +98,7 @@ export default function JoinPage() {
         // Save bet to sessionStorage for battle page to show on loss
         const selectedGifts = selectedIds.map(tid => inventory.find(t => t.id === tid)).filter(Boolean)
         const betData = {
-          gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+          gifts: selectedGifts.map(g => ({ gid: String(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
           total: totalTon
         }
         sessionStorage.setItem(`battle_bet_${gameId}`, JSON.stringify(betData))

@@ -23,11 +23,19 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
         const res = await withLoading(() => getGifts())
         if (cancelled) return
         const gifts = Array.isArray(res?.gifts) ? res.gifts : []
-        const mapped = gifts.map((g) => ({
-          id: String(g?.gid ?? ''),
-          image: g?.photo || null,
-          priceTON: Number(g?.value ?? 0),
-        }))
+        const mapped = gifts.map((g) => {
+          const rawPhoto = g?.photo || null
+          const image = typeof rawPhoto === 'string' && rawPhoto.length > 0
+            ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:')
+                ? rawPhoto
+                : `data:image/png;base64,${rawPhoto}`)
+            : null
+          return {
+            id: String(g?.gid ?? ''),
+            image,
+            priceTON: Number(g?.value ?? 0),
+          }
+        })
         setInventory(mapped)
       } finally {
         if (!cancelled) setLoading(false)
@@ -69,7 +77,8 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
 
   const handleCreate = async () => {
     if (!selectedCount) return
-    const giftIds = selectedIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+    // Backend expects array of gid strings
+    const giftIds = [...selectedIds]
     logger.debug('CreatePage: createBattle payload', { gifts: giftIds })
     const res = await withLoading(() => createBattle(giftIds))
     logger.debug('CreatePage: createBattle response', res)
@@ -77,7 +86,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
       // Save bet to sessionStorage for battle page to show on loss
       const selectedGifts = selectedIds.map(id => inventory.find(t => t.id === id)).filter(Boolean)
       const betData = {
-        gifts: selectedGifts.map(g => ({ gid: Number(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+        gifts: selectedGifts.map(g => ({ gid: String(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
         total: totalTon
       }
       // We don't know game_id yet, so save with a temp key and update in lobby

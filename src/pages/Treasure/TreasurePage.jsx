@@ -19,12 +19,22 @@ export default function TreasurePage() {
         const gifts = Array.isArray(res) ? res : [];
         // map gifts to UI items
         setMyItems(
-          gifts.map((g, idx) => ({
-            id: g?.gid ?? idx,
-            title: g?.slug || "Treasure",
-            priceTon: Number(g?.value ?? 0),
-            photo: g?.photo || null,
-          }))
+          gifts.map((g, idx) => {
+            const rawPhoto = g?.photo || null;
+            // Если backend возвращает base64 без data: префикса — добавим его
+            const photo = typeof rawPhoto === 'string' && rawPhoto.length > 0
+              ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:')
+                  ? rawPhoto
+                  : `data:image/png;base64,${rawPhoto}`)
+              : null;
+
+            return {
+              id: g?.gid ?? idx,
+              title: g?.slug || "Treasure",
+              priceTon: Number(g?.value ?? 0),
+              photo,
+            }
+          })
         );
       } catch (e) {
         if (cancelled) return;
@@ -146,7 +156,7 @@ function Grid3({ children }) {
 function MyTreasureCard({ title, photo, priceTon }) {
   return (
     <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)]">
-      <div className="rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
+      <div className="relative rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
                       flex flex-col items-center justify-center px-2 py-3">
         <img
           src={photo || EmptyGiftSvg}
@@ -155,10 +165,9 @@ function MyTreasureCard({ title, photo, priceTon }) {
           referrerPolicy="no-referrer"
           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = EmptyGiftSvg; }}
         />
-        <p className="mt-2 text-[13px] font-medium text-white">{title}</p>
-        <div className="mt-1 text-xs text-white/70 inline-flex items-center gap-1">
-          <span>{Number(priceTon ?? 0).toFixed(2)}</span>
-          <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
+        {/* Только число без названия и без TON-текста */}
+        <div className="mt-2 text-base font-semibold text-white">
+          {Number(priceTon ?? 0).toFixed(2)}
         </div>
       </div>
     </div>

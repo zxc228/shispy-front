@@ -46,13 +46,19 @@ export default function Header({
 
           {/* RIGHT: balance + Add */}
           <div className="relative w-40 h-11 rounded-xl bg-[radial-gradient(ellipse_79.53%_695.78%_at_3.18%_7.95%,_#111111_0%,_#222222_100%)]">
-            {/* баланс слева */}
-            <div className="absolute left-[-1px] top-0 h-11 pl-3 pr-4 py-3 rounded-xl inline-flex items-center">
+            {/* баланс слева с подсказкой */}
+            <div className="absolute left-[-1px] top-0 h-11 pl-3 pr-4 py-3 rounded-xl inline-flex items-center group" title="TON Connect будет подключен позже">
               <div className="inline-flex items-center gap-1">
                 <img src={TonIcon} alt="TON" className="w-4 h-4 shrink-0 object-contain" />
-                <span className="text-white text-base font-bold font-sans">
-                  {balance ?? amount}
+                <span className="text-white text-base font-bold font-sans select-none" aria-label="infinite balance">
+                  ∞
                 </span>
+              </div>
+              {/* hover tooltip (desktop) */}
+              <div className="pointer-events-none absolute left-2 top-[-36px] opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                <div className="px-2 py-1 rounded-md bg-neutral-800 text-white text-xs whitespace-nowrap shadow-lg border border-neutral-700">
+                  TON Connect будет подключен позже
+                </div>
               </div>
             </div>
 

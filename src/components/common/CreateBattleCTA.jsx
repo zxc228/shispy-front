@@ -5,7 +5,7 @@ export default function CreateBattleCTA({ onClick }) {
   const handleClick = () => (onClick ? onClick() : navigate('/create'))
 
   return (
-    <div className="fixed left-0 right-0 bottom-[calc(64px+env(safe-area-inset-bottom))] px-4 z-40">
+    <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] px-4 z-40">
       <div className="mx-auto max-w-[390px] w-full relative">
         <button
           type="button"

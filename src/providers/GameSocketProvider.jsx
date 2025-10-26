@@ -18,6 +18,12 @@ export function GameSocketProvider({ children }) {
 
   // Connect socket and recreate when token changes (Telegram auth may arrive later)
   useEffect(() => {
+    // Wait for auth token before connecting
+    if (!authToken) {
+      logger.debug('GameSocket: waiting for auth token...')
+      return
+    }
+
     try {
       // Parse VITE_GAME_WS_URL: can be either:
       // 1) Full URL like 'http://localhost:3001' (development with local game server)
@@ -34,13 +40,13 @@ export function GameSocketProvider({ children }) {
         options = {
           autoConnect: true,
           transports: ['websocket', 'polling'],
-          auth: authToken ? { token: authToken } : undefined,
+          auth: { token: authToken },
           reconnection: true,
           reconnectionAttempts: Infinity,
           reconnectionDelay: 500,
           reconnectionDelayMax: 5000,
         }
-        logger.info(`GameSocket: connecting (dev mode) url=${socketUrl}`, { authToken: !!authToken })
+        logger.info(`GameSocket: connecting (dev mode) url=${socketUrl}`)
       } else {
         // Production: wsUrl is transport path, use namespace separately
         socketUrl = namespace
@@ -48,13 +54,13 @@ export function GameSocketProvider({ children }) {
           path: wsUrl,
           autoConnect: true,
           transports: ['websocket', 'polling'],
-          auth: authToken ? { token: authToken } : undefined,
+          auth: { token: authToken },
           reconnection: true,
           reconnectionAttempts: Infinity,
           reconnectionDelay: 500,
           reconnectionDelayMax: 5000,
         }
-        logger.info(`GameSocket: connecting (prod mode) namespace=${namespace} path=${wsUrl}`, { authToken: !!authToken })
+        logger.info(`GameSocket: connecting (prod mode) namespace=${namespace} path=${wsUrl}`)
       }
       
       const s = io(socketUrl, options)
