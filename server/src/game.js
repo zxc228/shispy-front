@@ -103,7 +103,8 @@ class Game {
   placeSecret(sid, cell) {
     const role = this.playerRoleBySid(sid)
     if (!role) return
-    if (this.phase !== 'placing') return
+    // Allow placing secret in waiting_players or placing phase
+    if (this.phase !== 'placing' && this.phase !== 'waiting_players') return
     if (typeof cell !== 'number' || cell < 0 || cell > 15) return
     if (this.players[role].secret !== null) return
     this.players[role].secret = cell
@@ -113,7 +114,8 @@ class Game {
     // Also persist to backend to keep original logic intact
     this.apiSetField(role, cell).catch(() => {})
 
-    if (this.bothSecretsPlaced()) {
+    // Check if both players are connected AND both secrets placed
+    if (this.players.a.sid && this.players.b.sid && this.bothSecretsPlaced()) {
       this.doToss()
     }
   }
