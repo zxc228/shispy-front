@@ -80,20 +80,23 @@ export default function TreasurePage() {
           </Grid3>
         </div>
       ) : tab === "my" ? (
-        myItems.length ? (
-          <div className="animate-[fadeIn_0.3s_ease-out]">
-            {/* Слот Add new Treasure */}
-            <AddNewTreasureCard onAdd={() => { /* TODO: open add flow */ }} />
-            {/* Сетка инвентаря */}
-            <Grid3>
-              {myItems.map((it) => (
-                <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
-              ))}
-            </Grid3>
-          </div>
-        ) : (
-          <EmptyInventory onAdd={() => { /* TODO: open add flow */ }} />
-        )
+        <div className="animate-[fadeIn_0.3s_ease-out]">
+          {/* Сетка инвентаря с Add карточкой первой */}
+          <Grid3>
+            {/* Add new Treasure как первая карточка (неактивна) */}
+            <AddNewTreasureCardInGrid />
+            {/* Остальные подарки */}
+            {myItems.map((it) => (
+              <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
+            ))}
+          </Grid3>
+          {/* Показываем empty state если нет подарков */}
+          {myItems.length === 0 && (
+            <div className="mt-4">
+              <EmptyInventory />
+            </div>
+          )}
+        </div>
       ) : (
         <>
           {/* Shipsy Treasures — пока в разработке */}
@@ -131,18 +134,25 @@ function Tabs({ active, onChange }) {
   );
 }
 
-function AddNewTreasureCard({ onAdd }) {
+function AddNewTreasureCardInGrid() {
   return (
-    <button
-      onClick={onAdd}
-      className="w-full mb-2 h-28 relative rounded-[10px] overflow-hidden p-[1px] 
-                 outline outline-1 outline-offset-[-1px] outline-orange-400 text-orange-400
-                 active:scale-95 transition-transform"
+    <div
+      className="relative aspect-square rounded-[10px] overflow-hidden p-[1px] 
+                 bg-neutral-800/50 border border-dashed border-neutral-600
+                 opacity-50 cursor-not-allowed
+                 grid place-items-center"
+      title="Функция будет доступна позже"
     >
-      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-base font-medium">
-        Add new Treasure
-      </span>
-    </button>
+      <div className="flex flex-col items-center gap-2">
+        {/* Иконка плюса */}
+        <div className="w-10 h-10 rounded-full bg-neutral-700/50 grid place-items-center">
+          <span className="text-2xl text-neutral-400">+</span>
+        </div>
+        <span className="text-xs font-medium text-neutral-400 text-center px-2">
+          Add new
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -216,9 +226,9 @@ function StoreCard({
 
 /* --------- Empty state --------- */
 
-function EmptyInventory({ onAdd }) {
+function EmptyInventory() {
   return (
-    <div className="h-[420px] rounded-2xl flex flex-col items-center justify-center gap-4">
+    <div className="h-[320px] rounded-2xl flex flex-col items-center justify-center gap-4">
       <div className="text-7xl text-neutral-50">😔</div>
       <div className="text-center">
         <div className="text-neutral-50 text-lg font-semibold leading-snug">Inventory empty</div>
@@ -227,14 +237,6 @@ function EmptyInventory({ onAdd }) {
           <span className="text-orange-400">buy them in the store</span>
         </div>
       </div>
-      <button
-        onClick={onAdd}
-        className="h-12 px-4 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 
-                   shadow-[inset_0_-1px_0_rgba(230,141,74,1)] text-white font-semibold
-                   active:scale-95 transition-transform [text-shadow:_0_1px_25px_rgba(0,0,0,.25)]"
-      >
-        Click here to add Treasure
-      </button>
     </div>
   );
 }
