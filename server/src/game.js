@@ -264,7 +264,7 @@ class Game {
   async apiSetField(role, cell) {
     const api = this.axiosFor(role)
     // server expects { game_id, field }
-    await api.post('/lobby/set_filed', { game_id: Number(this.gameId), field: cell })
+    await api.post('/lobby/set_field', { game_id: Number(this.gameId), field: cell })
   }
   async apiStep(role, cell) {
     const api = this.axiosFor(role)
