@@ -63,13 +63,14 @@ export default function Header({
             </div>
 
             {/* подсветка под Add */}
-            <div className="absolute left-[85px] -top-0.5 w-20 h-12 p-3 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px]" />
+            <div className="absolute left-[85px] -top-0.5 w-20 h-12 p-3 bg-gradient-to-b from-neutral-700/50 to-neutral-800/50 rounded-xl blur-[2.5px]" />
 
-            {/* кнопка Add — плюс без иконок */}
+            {/* кнопка Add — неактивна, с подсказкой */}
             <button
-              onClick={handleAdd}
-              className="absolute left-[80px] -top-0.5 h-12 pl-3 pr-4 py-3 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_rgba(230,141,74,1)] inline-flex items-center gap-1.5 active:translate-y-[0.5px]"
-              aria-label="Add TON"
+              disabled
+              className="absolute left-[80px] -top-0.5 h-12 pl-3 pr-4 py-3 bg-gradient-to-b from-neutral-700 to-neutral-800 rounded-xl shadow-[inset_0_-1px_0_rgba(88,88,88,1)] inline-flex items-center gap-1.5 opacity-50 cursor-not-allowed group"
+              aria-label="Add TON (coming soon)"
+              title="Функция будет доступна позже"
             >
               {/* контейнер 24×24 с крестом, как в макете */}
               <span className="relative w-6 h-6 shrink-0 drop-shadow-[0_1px_25px_rgba(0,0,0,0.25)]">

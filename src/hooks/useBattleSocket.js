@@ -100,16 +100,7 @@ export default function useBattleSocket(gameId) {
       logger.info('useBattleSocket: → move', { cell, moveId })
       s.emit('move', { cell, moveId })
     },
-    concede: () => {
-      const s = socketRef.current
-      if (!s) {
-        logger.warn('useBattleSocket: concede called but no socket')
-        return
-      }
-      logger.info('useBattleSocket: → concede')
-      s.emit('concede')
-    },
-  }), [connected, ready, role, phase, turn, timeLeft, lastMove, toss])
+  }), [connected, ready, role, phase, turn, timeLeft, lastMove, toss, gameOver, lastError])
 
   return api
 }

@@ -211,6 +211,7 @@ export default function BattlePage() {
         gifts: rewards
       })
       setShowConfetti(true) // Show confetti on win!
+      setMode('win')
     } else {
       // Loser: show what was bet and lost
       const lostGifts = myBet?.gifts || []
@@ -220,9 +221,8 @@ export default function BattlePage() {
         amount: Number(lostTotal.toFixed(2)),
         gifts: lostGifts
       })
+      setMode('win') // Use same mode to allow clicking through overlay
     }
-    
-    setMode(win ? 'win' : 'enemyTurn')
   }, [battle.useRealtime, battle.gameOver, battle.role, myBet])
 
   const handleCellClick = (cellId) => {
@@ -314,10 +314,7 @@ export default function BattlePage() {
       
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
-  <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} onExit={() => {
-    if (battle.useRealtime) battle.concede()
-    navigate('/lobby')
-  }} />
+        <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} />
 
         {/* 4x4 grid */}
         <div className="mt-3 grid grid-cols-4 gap-1 px-2.5 place-items-center">

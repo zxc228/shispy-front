@@ -34,7 +34,14 @@ export default function LivePage() {
             </div>
             <div className="text-neutral-50 text-base text-center">
               Stay tuned for updates on our Telegram channel{' '}
-              <span className="text-orange-400">@ShipsyChannel</span>
+              <a 
+                href="https://t.me/shipsy_community" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-orange-400 underline hover:text-orange-300 transition-colors"
+              >
+                @ShipsyChannel
+              </a>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-export default function StatusBar({ title, showTimer, secondsLeft = 0, onExit }) {
+export default function StatusBar({ title, showTimer, secondsLeft = 0 }) {
   const mm = String(Math.floor(Math.max(0, secondsLeft) / 60)).padStart(2, '0')
   const ss = String(Math.max(0, secondsLeft) % 60).padStart(2, '0')
   // Progress bar: max 25s per turn, calculate percentage
@@ -19,16 +19,6 @@ export default function StatusBar({ title, showTimer, secondsLeft = 0, onExit })
                   {mm}:{ss}
                 </span>
               </div>
-            )}
-            {onExit && (
-              <button
-                type="button"
-                onClick={onExit}
-                className="h-8 px-2.5 rounded-full bg-neutral-800 text-white/90 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
-                aria-label="Concede and exit"
-              >
-                Concede
-              </button>
             )}
           </div>
         </div>

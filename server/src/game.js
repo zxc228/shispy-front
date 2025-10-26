@@ -107,20 +107,14 @@ class Game {
     if (typeof cell !== 'number' || cell < 0 || cell > 15) return
     if (this.players[role].secret !== null) return
     this.players[role].secret = cell
-    console.log(`[GAME ${this.gameId}] Player ${role} placed secret at cell ${cell}`)
     this.bumpVersion()
     this.emitState()
 
     // Also persist to backend to keep original logic intact
-    this.apiSetField(role, cell).catch((e) => {
-      console.error(`[GAME ${this.gameId}] apiSetField failed for ${role}:`, e.message)
-    })
+    this.apiSetField(role, cell).catch(() => {})
 
     if (this.bothSecretsPlaced()) {
-      console.log(`[GAME ${this.gameId}] Both secrets placed, starting toss`)
       this.doToss()
-    } else {
-      console.log(`[GAME ${this.gameId}] Waiting for other player to place secret (have: ${role})`)
     }
   }
 
@@ -129,11 +123,9 @@ class Game {
     // Random choose starter
     const first = randomInt(0, 2) === 0 ? 'a' : 'b'
     this.turn = first
-    console.log(`[GAME ${this.gameId}] Toss completed, first turn: ${first}`)
     this.nsp.to(this.room).emit('toss', { firstTurn: first, seed: Date.now() })
     // Small delay to allow UI animation, then start turn
     setTimeout(() => {
-      console.log(`[GAME ${this.gameId}] Starting turn for ${first} after toss delay`)
       this.startTurn(first)
     }, 600)
   }
@@ -141,11 +133,9 @@ class Game {
   startTurn(role) {
     this.turn = role
     const newPhase = role === 'a' ? 'turn_a' : 'turn_b'
-    console.log(`[GAME ${this.gameId}] startTurn: role=${role}, phase=${newPhase}`)
     this.setPhase(newPhase)
     this.startTimer()
     this.emitState()
-    console.log(`[GAME ${this.gameId}] State emitted after startTurn`)
   }
 
   startTimer() {
@@ -159,10 +149,16 @@ class Game {
         this.clearTimer()
         const loser = this.turn
         const winner = loser === 'a' ? 'b' : 'a'
-        this.finish(winner, { reason: 'timeout' })
+        // Call concede on behalf of the player who ran out of time
+        this.apiConcede(loser)
+          .then((rewards) => {
+            this.finish(winner, { reason: 'timeout', rewards })
+          })
+          .catch(() => {
+            // Still finish the game even if API call fails
+            this.finish(winner, { reason: 'timeout' })
+          })
       } else {
-        // Throttle state updates: emit every 1s by version bump or just emit lightweight
-        // For simplicity, emit state every tick (small game)
         this.emitState()
       }
     }, tickMs)
@@ -203,20 +199,7 @@ class Game {
     }
   }
 
-  concede(sid) {
-    const role = this.playerRoleBySid(sid)
-    if (!role) return
-    const winner = role === 'a' ? 'b' : 'a'
-    // Inform backend about concede so it can settle correctly and get rewards
-    this.apiConcede(role)
-      .then((rewards) => {
-        this.finish(winner, { reason: 'concede', rewards })
-      })
-      .catch(() => {
-        // If API fails, still end the game but without rewards
-        this.finish(winner, { reason: 'concede' })
-      })
-  }
+
 
   finish(winner, extra = {}) {
     this.clearTimer()
@@ -226,7 +209,6 @@ class Game {
     
     // Cleanup: delete this game from manager after 30 seconds to free memory
     setTimeout(() => {
-      console.log(`[GAME] Cleaning up finished game ${this.gameId}`)
       this.manager.delete(this.gameId)
     }, 30000)
   }
@@ -259,7 +241,6 @@ class Game {
       const s = this.nsp.sockets.get(sid)
       if (s) {
         const state = this.stateFor(sid)
-        console.log(`[GAME ${this.gameId}] Emitting state to ${role} (${sid}):`, JSON.stringify(state))
         s.emit('state', state)
       }
     }
@@ -293,7 +274,7 @@ class Game {
     const winnerRole = role === 'a' ? 'b' : 'a'
     const winnerTuid = this.players[winnerRole]?.tuid
     const res = await api.post('/lobby/concede', { game_id: Number(this.gameId), tuid: winnerTuid })
-    // Return rewards from backend
-    return res?.data?.rewards || []
+    // Backend returns gifts array directly
+    return Array.isArray(res?.data) ? res.data : []
   }
 }
