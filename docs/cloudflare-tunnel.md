@@ -3,9 +3,18 @@
 This repo already supports a single domain exposing both the Vite dev server and the Socket.IO game server via the same origin. For quick dev, the `trycloudflare.com` tunnel is ephemeral. For a stable URL (so you don't have to update Telegram settings every time), use a Named Tunnel on a domain you control.
 
 ## Quick (ephemeral) — already wired
-- Front: `npm run dev:twa` (Vite + tunnel for 5173)
-- Front+Game: `npm run dev:twa:game` (Vite + tunnel + game server)
-- The tunnel domain changes per run. The Socket.IO endpoint is available at `https://<tunnel-domain>/game` (proxied to localhost:4000 by Vite).
+- Front only: `npm run dev:twa` (Vite + tunnel for 5173)
+- Front+Game (dev mode): `npm run dev:tunnel:game` (Vite + game server + tunnel)
+- Front+Game (test mode): `npm run dev:twa:game` (Vite --mode test + game server + tunnel)
+
+The tunnel domain changes per run. The Socket.IO endpoint is available at `https://<tunnel-domain>/game` (proxied to localhost:4000 by Vite).
+
+On Windows PowerShell:
+
+```powershell
+npm install
+npm run dev:tunnel:game
+```
 
 ## Stable (Named Tunnel)
 Requires a Cloudflare account and a domain managed by Cloudflare.
