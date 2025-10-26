@@ -136,19 +136,18 @@ function Tabs({ active, onChange }) {
 
 function AddNewTreasureCardInGrid() {
   return (
-    <div
-      className="relative aspect-square rounded-[10px] overflow-hidden p-[1px] 
-                 bg-neutral-800/50 border border-dashed border-neutral-600
-                 opacity-50 cursor-not-allowed
-                 grid place-items-center"
-      title="Функция будет доступна позже"
-    >
-      <div className="flex flex-col items-center gap-2">
+    <div className="rounded-[10px] p-[1px] bg-neutral-700/50">
+      <div
+        className="relative rounded-[10px] min-h-32 bg-neutral-800/30 border border-dashed border-neutral-600
+                   opacity-50 cursor-not-allowed
+                   flex flex-col items-center justify-center px-2 py-3"
+        title="Функция будет доступна позже"
+      >
         {/* Иконка плюса */}
         <div className="w-10 h-10 rounded-full bg-neutral-700/50 grid place-items-center">
           <span className="text-2xl text-neutral-400">+</span>
         </div>
-        <span className="text-xs font-medium text-neutral-400 text-center px-2">
+        <span className="text-xs font-medium text-neutral-400 text-center mt-2">
           Add new
         </span>
       </div>
