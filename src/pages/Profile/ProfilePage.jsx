@@ -127,23 +127,6 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* STATS SUMMARY (from backend) */}
-      <section className="w-full px-2.5">
-        <div className="w-full flex items-center justify-between">
-          <div className="text-neutral-700 text-xs font-normal font-sans">
-            Игр: {profile?.count_games ?? (loading ? '…' : '—')}
-          </div>
-          <div className="flex items-center gap-[5px]">
-            <div className="text-neutral-700 text-xs font-normal font-sans">
-              Побед: {profile?.percantage ?? (loading ? '…' : 0)}%
-            </div>
-            <div className="text-neutral-50 text-xs font-semibold font-sans">
-              {profile?.value ?? 0} TON
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* STATS (3 CARDS) — from backend */}
       <section className="w-full px-2.5 grid grid-cols-3 gap-1.5">
         <div className="p-2 relative bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex flex-col justify-center gap-1 overflow-hidden">
