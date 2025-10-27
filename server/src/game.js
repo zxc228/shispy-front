@@ -73,7 +73,8 @@ class Game {
 
     if (this.players.a.sid && this.players.b.sid) {
       this.setPhase('placing')
-      // Don't start timer yet - wait until at least one player places their secret
+      // Start timer immediately when both players connected
+      this.startPlacingTimer()
     }
     this.emitState()
     return role
@@ -128,17 +129,9 @@ class Game {
     if (typeof cell !== 'number' || cell < 0 || cell > 15) return
     if (this.players[role].secret !== null) return
     
-    // Check if this is the first secret being placed
-    const isFirstSecret = this.players.a.secret === null && this.players.b.secret === null
-    
     this.players[role].secret = cell
     this.bumpVersion()
     this.emitState()
-
-    // Start placing timer when first player makes their choice
-    if (isFirstSecret && this.phase === 'placing') {
-      this.startPlacingTimer()
-    }
 
     // Also persist to backend to keep original logic intact
     this.apiSetField(role, cell).catch(() => {})
@@ -211,8 +204,15 @@ class Game {
         const bPlaced = this.players.b.secret !== null
         
         if (!aPlaced && !bPlaced) {
-          // Both failed to place - just finish without API call (API not ready for this case)
-          this.finish(null, { reason: 'placing_timeout_both' })
+          // Both failed to place - call cancel API
+          this.apiCancel()
+            .then(() => {
+              this.finish(null, { reason: 'placing_timeout_both' })
+            })
+            .catch(() => {
+              // Still finish even if API call fails
+              this.finish(null, { reason: 'placing_timeout_both' })
+            })
         } else if (!aPlaced) {
           // Player A didn't place, B wins
           this.apiConcede('a')
@@ -358,5 +358,17 @@ class Game {
     const res = await api.post('/lobby/concede', { game_id: Number(this.gameId), tuid: winnerTuid })
     // Backend returns gifts array directly
     return Array.isArray(res?.data) ? res.data : []
+  }
+  
+  async apiCancel() {
+    // Cancel game when both players failed to place
+    // Use first available token (prefer player A)
+    const role = this.players.a.token ? 'a' : (this.players.b.token ? 'b' : null)
+    if (!role) {
+      console.warn('apiCancel: no token available for cancel request')
+      return
+    }
+    const api = this.axiosFor(role)
+    await api.post('/lobby/cancel_game', { game_id: Number(this.gameId) })
   }
 }

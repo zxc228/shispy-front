@@ -64,18 +64,17 @@ export default function BattlePage() {
 
   // derived title and CTA
   const { title, showTimer } = useMemo(() => {
-    // In placing phase, show helpful hint if timer hasn't started yet
-    const placingTitle = battle.placingTimerStarted 
-      ? 'Select a cell' 
-      : 'Select a cell to hide your NFT'
-    
     switch (mode) {
+      case 'waitingForPlayers':
+        // Waiting for second player to join the game
+        return { title: 'Waiting for opponent to join...', showTimer: false }
       case 'selectShip':
       case 'selectShipSelected':
-        // Show timer only if placing timer has started (someone already picked)
-        return { title: placingTitle, showTimer: battle.placingTimerStarted ?? false }
+        // Show timer in placing phase (timer starts when both players connected)
+        logger.debug('BattlePage: showTimer for selectShip', { mode, showTimer: true })
+        return { title: 'Select a cell to hide your NFT', showTimer: true }
       case 'selectShipWaiting':
-        return { title: battle.placingTimerStarted ? 'Waiting for opponent' : 'Waiting for opponent to choose', showTimer: battle.placingTimerStarted ?? false }
+        return { title: 'Waiting for opponent to choose', showTimer: true }
       case 'myTurn':
       case 'myTurnSelected':
         return { title: 'Your move', showTimer: true }
@@ -90,10 +89,10 @@ export default function BattlePage() {
       default:
         return { title: 'Battle', showTimer: false }
     }
-  }, [mode, battle.placingTimerStarted])
+  }, [mode])
 
   // disable interactions in these modes
-  const gridDisabled = ['selectShipWaiting', 'myTurnFiring', 'enemyTurn', 'win'].includes(mode)
+  const gridDisabled = ['waitingForPlayers', 'selectShipWaiting', 'myTurnFiring', 'enemyTurn', 'win'].includes(mode)
 
   // Disable legacy polling entirely in realtime migration
   useEffect(() => { return () => {} }, [])
@@ -117,6 +116,10 @@ export default function BattlePage() {
     if (!battle.useRealtime) return
     // enable server timer
     setTimerEnabled(true)
+    logger.debug('BattlePage: timer enabled', { 
+      phase: battle.phase, 
+      placingTimerStarted: battle.placingTimerStarted 
+    })
     
     logger.info('BattlePage: realtime state changed', { 
       phase: battle.phase, 
@@ -135,7 +138,9 @@ export default function BattlePage() {
     // Update timer based on phase
     if (battle.phase === 'placing') {
       // Use placing timer
-      setSecondsLeft(Math.ceil((battle.placingTimeLeft || 0) / 1000))
+      const seconds = Math.ceil((battle.placingTimeLeft || 0) / 1000)
+      logger.debug('BattlePage: updating placing timer', { placingTimeLeft: battle.placingTimeLeft, seconds })
+      setSecondsLeft(seconds)
     } else {
       // Use player's turn timer
       if (battle.role === 'a') setSecondsLeft(Math.ceil((battle.timeLeft.a || 0) / 1000))
@@ -145,8 +150,8 @@ export default function BattlePage() {
     // phase mapping
     if (battle.phase === 'waiting_players') {
       // Waiting for second player to join
-      logger.info('BattlePage: waiting for second player')
-      setMode('selectShipWaiting')
+      logger.info('BattlePage: waiting for second player to join')
+      setMode('waitingForPlayers')
       return
     }
     if (battle.phase === 'placing') {
@@ -218,6 +223,19 @@ export default function BattlePage() {
   useEffect(() => {
     if (!battle.useRealtime) return
     if (!battle.gameOver) return
+    
+    // Handle case when both players failed (winner is null)
+    if (battle.gameOver.winner === null) {
+      // Both players failed - show draw/cancel message
+      setSheet({
+        variant: 'lose',
+        amount: 0,
+        gifts: []
+      })
+      setMode('win') // Use same mode to allow clicking through overlay
+      return
+    }
+    
     const win = battle.gameOver.winner === battle.role
     
     if (win) {
@@ -407,18 +425,36 @@ export default function BattlePage() {
           <div className="fixed left-0 right-0 bottom-0 z-50">
             <div className="mx-auto max-w-[390px] bg-black rounded-t-2xl outline outline-1 outline-neutral-700 p-3 flex flex-col" style={{ height: '52vh' }}>
               <div className="flex items-center justify-between">
-                <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-white', 'text-base font-semibold'].join(' ')}>
-                  {sheet.variant === 'lose' ? 'You lost' : 'Your gifts:'}
+                <div className={[
+                  sheet.variant === 'lose' && sheet.amount === 0 ? 'text-neutral-400' : (sheet.variant === 'lose' ? 'text-red-400' : 'text-white'), 
+                  'text-base font-semibold'
+                ].join(' ')}>
+                  {sheet.variant === 'lose' && sheet.amount === 0 ? 'Game cancelled' : (sheet.variant === 'lose' ? 'You lost' : 'Your gifts:')}
                 </div>
-                <div className="inline-flex items-center gap-1.5">
-                  <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-base font-semibold'].join(' ')}>
-                    {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
+                {sheet.amount > 0 && (
+                  <div className="inline-flex items-center gap-1.5">
+                    <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-base font-semibold'].join(' ')}>
+                      {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
+                    </div>
+                    <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                   </div>
-                  <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
-                </div>
+                )}
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-2 flex-1 overflow-y-auto pr-1">
+              {sheet.amount === 0 && sheet.variant === 'lose' ? (
+                // Game cancelled - show message
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center text-neutral-400">
+                    <div className="text-4xl mb-3">⏱️</div>
+                    <div className="text-sm">
+                      Time's up! Both players failed to select a cell.
+                      <br />
+                      The game has been cancelled.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-3 gap-2 flex-1 overflow-y-auto pr-1">
                 {Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
                   // Show actual gifts (either won or lost)
                   sheet.gifts.map((g, i) => (
@@ -445,7 +481,8 @@ export default function BattlePage() {
                     </div>
                   ))
                 )}
-              </div>
+                </div>
+              )}
 
               <div className="mt-4">
                 <button
