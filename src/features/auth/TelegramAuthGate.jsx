@@ -3,7 +3,6 @@ import { useTelegram } from '../../providers/TelegramProvider'
 import { authTelegram } from '../../shared/api/auth.api'
 import { apiSetAccessToken } from '../../shared/api/client'
 import { logger } from '../../shared/logger'
-import LoadingOverlay from '../../components/common/LoadingOverlay'
 
 export default function TelegramAuthGate({ children }) {
   const { isInTelegram, initData } = useTelegram()
@@ -68,13 +67,9 @@ export default function TelegramAuthGate({ children }) {
   // Add debug logging for status changes
   logger.debug('AuthGate render', { status, isInTelegram })
 
-  // Show loading overlay while authenticating
+  // No longer showing splash here - it's in App.jsx now
   if (isInTelegram && (status === 'idle' || status === 'loading')) {
-    return (
-      <div className="min-h-screen w-full bg-black flex items-center justify-center">
-        <LoadingOverlay show={true} />
-      </div>
-    )
+    return null // Let the main app handle splash screen
   }
 
   return (

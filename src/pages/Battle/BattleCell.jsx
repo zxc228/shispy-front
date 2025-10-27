@@ -30,7 +30,7 @@ export default function BattleCell({ id, state, disabled, onSelect, showSpinner,
         {state === 'miss' ? (
           <img src={MissIcon} alt="Miss" className="w-full h-full object-cover" />
         ) : (
-          <img src={CellBattleIcon} alt="Cell" className="w-7 h-7 opacity-80" />
+          <img src={CellBattleIcon} alt="Cell" className="w-full h-full object-cover" />
         )}
       </div>
 

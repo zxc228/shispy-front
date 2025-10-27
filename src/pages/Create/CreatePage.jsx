@@ -232,7 +232,7 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       type="button"
       aria-pressed={selected}
       onClick={onToggle}
-      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden transition-all duration-200 ${selected ? 'animate-[bounce_0.5s_ease-out] scale-105' : 'hover:scale-105 active:scale-95'}`}
+      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden transition-all duration-200 ${selected ? 'scale-105' : 'hover:scale-105 active:scale-95'}`}
     >
       {treasure?.image ? (
         <div className="w-full h-full p-2">
@@ -279,20 +279,13 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
           </div>
 
           <div className="mt-1.5 relative">
-            {!disabled && (
-              <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
-            )}
+            <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
             <button
               type="button"
               aria-label={disabled ? 'Create Battle' : 'Create'}
               disabled={disabled}
               onClick={onCreate}
-              className={[
-                'w-full h-11 px-4 py-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60',
-                disabled
-                  ? 'bg-zinc-100/25 text-zinc-500 shadow-[inset_0_-1px_0_0_rgba(255,255,255,0.10)] cursor-not-allowed'
-                  : 'bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform duration-150',
-              ].join(' ')}
+              className="w-full h-11 px-4 py-2.5 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 active:translate-y-[0.5px] transition-transform duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {disabled ? 'Create Battle' : 'Create'}
             </button>

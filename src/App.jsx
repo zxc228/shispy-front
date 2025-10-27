@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import AppLayout from './components/layout/AppLayout'
 import MapPage from './pages/Map/MapPage'
 import LivePage from './pages/Live/LivePage'
@@ -11,10 +12,20 @@ import CreatePage from './pages/Create/CreatePage'
 import JoinPage from './pages/Join/JoinPage'
 import WaitingScreen from './pages/Lobby/WaitingScreen'
 import DebugConsole from './components/Debug/DebugConsole'
+import SplashScreen from './components/common/SplashScreen'
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true) // Always show on start for now
+
+  const handleCloseSplash = () => {
+    // TODO: Uncomment later to enable localStorage persistence
+    // localStorage.setItem('splash_seen', 'true')
+    setShowSplash(false)
+  }
+
   return (
     <>
+      {showSplash && <SplashScreen onClose={handleCloseSplash} />}
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
