@@ -50,6 +50,13 @@ class Game {
   dispose() {
     this.clearTimer()
     this.clearPlacingTimer()
+    // Clear any disconnect timeouts
+    if (this.disconnectTimeouts) {
+      for (const role in this.disconnectTimeouts) {
+        clearTimeout(this.disconnectTimeouts[role])
+      }
+      this.disconnectTimeouts = {}
+    }
   }
 
   addPlayer(socket) {
@@ -58,18 +65,54 @@ class Game {
       socket.emit('error', { code: 'GAME_FINISHED', message: 'This game has already ended' })
       return null
     }
-    // assign to a or b
+
+    // Read token and tuid from socket
+    const token = socket.handshake?.auth?.token || null
+    const newTuid = socket.data?.tuid || null
+
+    // Check if this tuid is already in the game (reconnect scenario)
+    let existingRole = null
+    for (const role of ['a', 'b']) {
+      if (this.players[role].tuid && this.players[role].tuid === newTuid) {
+        existingRole = role
+        break
+      }
+    }
+
+    if (existingRole) {
+      // Reconnecting player
+      // Note: Old socket already disconnected globally in index.js
+      
+      // Clear disconnect timeout if exists
+      if (this.disconnectTimeouts && this.disconnectTimeouts[existingRole]) {
+        clearTimeout(this.disconnectTimeouts[existingRole])
+        delete this.disconnectTimeouts[existingRole]
+        console.log(`[Game ${this.gameId}] Cleared disconnect timeout for ${existingRole}`)
+      }
+      
+      // Update socket id for reconnecting player
+      this.players[existingRole].sid = socket.id
+      if (token) this.players[existingRole].token = token
+      socket.join(this.room)
+      
+      console.log(`[Game ${this.gameId}] Player ${existingRole} reconnected (tuid: ${newTuid})`)
+      this.emitState()
+      return existingRole
+    }
+
+    // New player - assign to a or b
     const role = !this.players.a.sid ? 'a' : (!this.players.b.sid ? 'b' : null)
     if (!role) {
       socket.emit('error', { code: 'ROOM_FULL', message: 'Game already has two players' })
       return null
     }
+
     this.players[role].sid = socket.id
-    // read token from auth and tuid from last join payload saved on socket.data
-    const token = socket.handshake?.auth?.token || null
     if (token) this.players[role].token = token
-    if (socket.data?.tuid) this.players[role].tuid = socket.data.tuid
+    if (newTuid) this.players[role].tuid = newTuid
     socket.join(this.room)
+
+    console.log(`[Game ${this.gameId}] Player ${role} joined (tuid: ${newTuid})`)
 
     if (this.players.a.sid && this.players.b.sid) {
       this.setPhase('placing')
@@ -83,22 +126,41 @@ class Game {
   removePlayerBySid(sid) {
     for (const role of ['a', 'b']) {
       if (this.players[role].sid === sid) {
+        console.log(`[Game ${this.gameId}] Player ${role} disconnected (sid: ${sid})`)
+        
+        // Don't immediately remove - just clear socket id to allow reconnect
         this.players[role].sid = null
         
-        // If a player disconnects during placing phase, end the game
-        if (this.phase === 'placing' || this.phase === 'waiting_players') {
-          // Find the opponent who stayed
-          const opponent = role === 'a' ? 'b' : 'a'
-          const opponentStillPresent = this.players[opponent].sid !== null
-          
-          if (opponentStillPresent) {
-            // Award win to the player who stayed
-            this.finish(opponent, { reason: 'opponent_disconnected' })
-          } else {
-            // Both disconnected, just clean up
-            this.manager.delete(this.gameId)
+        // Set a timeout to handle prolonged disconnection
+        // If player doesn't reconnect within 30 seconds, they lose
+        const disconnectTimeout = setTimeout(() => {
+          // Check if player reconnected (sid will be set again)
+          if (this.players[role].sid === null) {
+            console.log(`[Game ${this.gameId}] Player ${role} failed to reconnect, ending game`)
+            
+            // If in placing phase or waiting, award win to opponent
+            if (this.phase === 'placing' || this.phase === 'waiting_players') {
+              const opponent = role === 'a' ? 'b' : 'a'
+              const opponentStillPresent = this.players[opponent].sid !== null
+              
+              if (opponentStillPresent) {
+                this.finish(opponent, { reason: 'opponent_disconnected' })
+              } else {
+                // Both disconnected, clean up
+                this.manager.delete(this.gameId)
+              }
+            } else if (this.phase === 'turn_a' || this.phase === 'turn_b') {
+              // During game, opponent wins
+              const opponent = role === 'a' ? 'b' : 'a'
+              this.finish(opponent, { reason: 'opponent_disconnected' })
+            }
           }
-        }
+        }, 30000) // 30 second grace period for reconnect
+        
+        // Store timeout so we can clear it if player reconnects
+        if (!this.disconnectTimeouts) this.disconnectTimeouts = {}
+        this.disconnectTimeouts[role] = disconnectTimeout
+        
         break
       }
     }

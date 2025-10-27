@@ -19,13 +19,43 @@ export default function WaitingScreen() {
     return () => clearInterval(interval)
   }, [])
 
-  // Счётчик времени ожидания
+  // Счётчик времени ожидания (от времени начала поиска из sessionStorage)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsWaiting(prev => prev + 1)
-    }, 1000)
+    // Initialize or read persistent start timestamp
+    let startedAt = 0
+    try {
+      const existing = Number(sessionStorage.getItem('search_started_at') || '0')
+      if (existing > 0) {
+        startedAt = existing
+      } else {
+        startedAt = Date.now()
+        sessionStorage.setItem('search_started_at', String(startedAt))
+      }
+    } catch {
+      startedAt = Date.now()
+    }
+
+    const tick = async () => {
+      const elapsed = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+      setSecondsWaiting(elapsed)
+      // Auto-cancel if > 60 seconds
+      if (elapsed >= 60) {
+        try { await cancelLobby() } catch {}
+        try {
+          sessionStorage.removeItem('pending_bet')
+          sessionStorage.removeItem('search_started_at')
+        } catch {}
+        logger.info('WaitingScreen: search timeout reached (60s). Cancelled and returning to lobby')
+        navigate('/lobby', { replace: true })
+      }
+    }
+
+    // Update every second
+    const interval = setInterval(tick, 1000)
+    // Run once immediately
+    tick()
     return () => clearInterval(interval)
-  }, [])
+  }, [navigate])
 
   // Поллинг статуса
   useEffect(() => {
@@ -51,6 +81,8 @@ export default function WaitingScreen() {
               sessionStorage.setItem(`battle_bet_${gameId}`, pending)
               sessionStorage.removeItem('pending_bet')
             }
+            // Clear search timer when battle starts
+            sessionStorage.removeItem('search_started_at')
           } catch (e) {
             logger.warn('WaitingScreen: failed to transfer bet', e)
           }
@@ -81,10 +113,12 @@ export default function WaitingScreen() {
     try {
       await withLoading(() => cancelLobby())
       sessionStorage.removeItem('pending_bet')
+      sessionStorage.removeItem('search_started_at')
       navigate('/lobby', { replace: true })
     } catch (e) {
       logger.error('WaitingScreen: cancel failed', e)
       // Navigate anyway
+      sessionStorage.removeItem('search_started_at')
       navigate('/lobby', { replace: true })
     }
   }

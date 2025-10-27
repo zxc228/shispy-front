@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 /**
  * ConnectionError - Shows reconnection screen when network fails
  */
-export default function ConnectionError({ show, onRetry }) {
+export default function ConnectionError({ show, onRetry, errorDetails }) {
   const [dots, setDots] = useState('.')
 
   useEffect(() => {
@@ -16,9 +16,12 @@ export default function ConnectionError({ show, onRetry }) {
 
   if (!show) return null
 
+  const title = errorDetails?.title || 'Connection Lost'
+  const message = errorDetails?.message || 'Please check your internet connection and try again'
+
   return (
     <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-[fadeIn_0.3s_ease-out]">
-      <div className="flex flex-col items-center max-w-[280px] px-4">
+      <div className="flex flex-col items-center max-w-[320px] px-4">
         {/* Error icon with pulse */}
         <div className="mb-8 relative">
           <div className="w-32 h-32 rounded-full bg-gradient-to-br from-red-400/20 to-orange-600/20 flex items-center justify-center">
@@ -32,12 +35,12 @@ export default function ConnectionError({ show, onRetry }) {
 
         {/* Title */}
         <h1 className="text-2xl font-bold mb-2 text-center text-white">
-          Connection Lost
+          {title}
         </h1>
 
         {/* Message */}
-        <p className="text-neutral-400 text-center mb-6">
-          Please check your internet connection and try again{dots}
+        <p className="text-neutral-400 text-center mb-6 text-sm leading-relaxed">
+          {message}{dots}
         </p>
 
         {/* Retry button */}
