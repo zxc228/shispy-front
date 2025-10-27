@@ -278,10 +278,6 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
             </div>
           </div>
 
-          <div className="mt-1 text-neutral-700 text-sm">
-            Fixed game commission of 0.2 TON
-          </div>
-
           <div className="mt-1.5 relative">
             {!disabled && (
               <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />

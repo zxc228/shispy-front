@@ -21,28 +21,31 @@ export default function OnlineCounter() {
 
     socket.on('online_count', handleOnlineCount)
 
+    // Request count immediately on mount if connected
+    if (socket.connected) {
+      logger.debug('OnlineCounter: Socket already connected, count will arrive from server broadcast')
+    }
+
     return () => {
       socket.off('online_count', handleOnlineCount)
     }
   }, [getSocket])
 
-  // Don't render if not connected or no count yet
-  if (!connected || count === null) {
-    return null
-  }
-
+  // Always render, show placeholder while connecting or waiting for data
   return (
     <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
       <div className="relative flex items-center">
         <span className="text-xs">👥</span>
-        {/* Pulse indicator when online */}
-        <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-        </span>
+        {/* Pulse indicator when online and count is available */}
+        {connected && count !== null && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          </span>
+        )}
       </div>
       <span className="text-xs font-medium text-white/80 tabular-nums">
-        {count.toLocaleString()}
+        {count !== null ? count.toLocaleString() : '...'}
       </span>
     </div>
   )
