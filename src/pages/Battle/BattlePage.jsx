@@ -64,12 +64,18 @@ export default function BattlePage() {
 
   // derived title and CTA
   const { title, showTimer } = useMemo(() => {
+    // In placing phase, show helpful hint if timer hasn't started yet
+    const placingTitle = battle.placingTimerStarted 
+      ? 'Select a cell' 
+      : 'Select a cell to hide your NFT'
+    
     switch (mode) {
       case 'selectShip':
       case 'selectShipSelected':
-        return { title: 'Select a cell', showTimer: false }
+        // Show timer only if placing timer has started (someone already picked)
+        return { title: placingTitle, showTimer: battle.placingTimerStarted ?? false }
       case 'selectShipWaiting':
-        return { title: 'Expecting a player', showTimer: true }
+        return { title: battle.placingTimerStarted ? 'Waiting for opponent' : 'Waiting for opponent to choose', showTimer: battle.placingTimerStarted ?? false }
       case 'myTurn':
       case 'myTurnSelected':
         return { title: 'Your move', showTimer: true }
@@ -84,7 +90,7 @@ export default function BattlePage() {
       default:
         return { title: 'Battle', showTimer: false }
     }
-  }, [mode])
+  }, [mode, battle.placingTimerStarted])
 
   // disable interactions in these modes
   const gridDisabled = ['selectShipWaiting', 'myTurnFiring', 'enemyTurn', 'win'].includes(mode)
@@ -125,11 +131,24 @@ export default function BattlePage() {
       setTossShown(true)
       setTimeout(() => setTossInfo(null), 2500) // longer duration for animation
     }
-    // seconds left from server per role
-    if (battle.role === 'a') setSecondsLeft(Math.ceil((battle.timeLeft.a || 0) / 1000))
-    if (battle.role === 'b') setSecondsLeft(Math.ceil((battle.timeLeft.b || 0) / 1000))
+    
+    // Update timer based on phase
+    if (battle.phase === 'placing') {
+      // Use placing timer
+      setSecondsLeft(Math.ceil((battle.placingTimeLeft || 0) / 1000))
+    } else {
+      // Use player's turn timer
+      if (battle.role === 'a') setSecondsLeft(Math.ceil((battle.timeLeft.a || 0) / 1000))
+      if (battle.role === 'b') setSecondsLeft(Math.ceil((battle.timeLeft.b || 0) / 1000))
+    }
 
     // phase mapping
+    if (battle.phase === 'waiting_players') {
+      // Waiting for second player to join
+      logger.info('BattlePage: waiting for second player')
+      setMode('selectShipWaiting')
+      return
+    }
     if (battle.phase === 'placing') {
       logger.info('BattlePage: setting mode for placing phase', { placedSecret })
       setMode(placedSecret ? 'selectShipWaiting' : 'selectShip')
@@ -160,7 +179,7 @@ export default function BattlePage() {
       logger.info('BattlePage: game finished')
       return
     }
-  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.toss, placedSecret, tossShown, mode])
+  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.placingTimeLeft, battle.placingTimerStarted, battle.toss, placedSecret, tossShown, mode])
 
   // Apply move results to grid and finish state in realtime
   useEffect(() => {
@@ -307,6 +326,14 @@ export default function BattlePage() {
     return { ctaVisible: false, ctaDisabled: true, ctaLabel: '', ctaOnClick: () => {} }
   }, [mode, selectedShipIds.length, selectedTargetId])
 
+  // Calculate max time for progress bar based on current phase
+  const maxTime = useMemo(() => {
+    if (battle.useRealtime && battle.phase === 'placing') {
+      return 20 // 20 seconds for placing phase
+    }
+    return 25 // 25 seconds for turn phases
+  }, [battle.useRealtime, battle.phase])
+
   return (
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
       {/* Confetti on win */}
@@ -314,7 +341,7 @@ export default function BattlePage() {
       
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">
-        <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} />
+        <StatusBar title={title} showTimer={timerEnabled && showTimer} secondsLeft={secondsLeft} maxTime={maxTime} />
 
         {/* 4x4 grid */}
         <div className="mt-3 grid grid-cols-4 gap-1 px-2.5 place-items-center">
