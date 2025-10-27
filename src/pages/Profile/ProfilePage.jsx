@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 // import PromoCodeSection from './PromoCodeSection'
 import { useTelegram } from '../../providers/TelegramProvider'
 import ProfileSvg from '../../components/icons/ProfileIcon.svg'
@@ -11,6 +12,7 @@ import { useLoading } from '../../providers/LoadingProvider'
 import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const { user, authDone } = useTelegram()
   const { withLoading } = useLoading()
   const [profile, setProfile] = useState(null)
@@ -177,6 +179,24 @@ export default function ProfilePage() {
           </div>
         </section>
       )}
+
+      {/* GAME HISTORY (from backend) */}
+      {/* QUICK LINKS */}
+      <section className="w-full px-2.5">
+        <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">📜</span>
+            <div className="flex flex-col">
+              <div className="text-neutral-50 text-base font-semibold font-sans">Game Guide</div>
+              <div className="text-white/60 text-xs">How it works, fees, timing</div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/rules')}
+            className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white text-sm"
+          >Open</button>
+        </div>
+      </section>
 
       {/* GAME HISTORY (from backend) */}
       <section className="w-full px-2.5">
