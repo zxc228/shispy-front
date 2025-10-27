@@ -91,6 +91,10 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
       }
       // We don't know game_id yet, so save with a temp key and update in lobby
       sessionStorage.setItem('pending_bet', JSON.stringify(betData))
+      // Save search start timestamp (persist across reloads)
+      if (!sessionStorage.getItem('search_started_at')) {
+        sessionStorage.setItem('search_started_at', String(Date.now()))
+      }
       
       if (onCreateBattle) onCreateBattle(selectedIds)
       navigate('/lobby/waiting', { replace: true })

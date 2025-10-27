@@ -48,6 +48,18 @@ export default function BattlePage() {
     })
   }
 
+  // Save active game ID for reconnection
+  useEffect(() => {
+    sessionStorage.setItem('active_game_id', String(gameId))
+    logger.info('BattlePage: saved active game ID', { gameId })
+    
+    // Clear on unmount (when leaving battle)
+    return () => {
+      sessionStorage.removeItem('active_game_id')
+      logger.info('BattlePage: cleared active game ID')
+    }
+  }, [gameId])
+
   // Load player's bet from sessionStorage (saved during create/join)
   useEffect(() => {
     try {
@@ -223,6 +235,10 @@ export default function BattlePage() {
   useEffect(() => {
     if (!battle.useRealtime) return
     if (!battle.gameOver) return
+    
+    // Clear active game from sessionStorage when game ends
+    sessionStorage.removeItem('active_game_id')
+    logger.info('BattlePage: cleared active game ID on game over')
     
     // Handle case when both players failed (winner is null)
     if (battle.gameOver.winner === null) {

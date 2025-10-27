@@ -261,6 +261,11 @@ export default function LobbyPage() {
         const res = await getWaitingStatus()
         if (cancelled) return
         const serverWaiting = !!res?.status
+        // If server indicates we are in queue (searching), redirect to WaitingScreen immediately
+        if (serverWaiting && res?.status !== -1) {
+          navigate('/lobby/waiting', { replace: true })
+          return
+        }
         // If backend says we are in-game, navigate to battle exactly once (host case)
         if (!navigatedRef.current && res?.status === -1 && Number.isFinite(Number(res?.game_id))) {
           navigatedRef.current = true
@@ -280,6 +285,13 @@ export default function LobbyPage() {
           navigate(`/lobby/battle/${gameId}`)
           return
         }
+        // Ensure search timestamp exists while waiting
+        try {
+          if (serverWaiting && !sessionStorage.getItem('search_started_at')) {
+            sessionStorage.setItem('search_started_at', String(Date.now()))
+          }
+        } catch {}
+
         // if we have a fresh justCreated flag (TTL 12s), keep waiting on even if server says false
         const ttlMs = 12000
         const withinTtl = justCreated && createdSinceRef.current && (Date.now() - createdSinceRef.current < ttlMs)
@@ -296,6 +308,13 @@ export default function LobbyPage() {
     check()
     return () => { cancelled = true; if (timerId) clearTimeout(timerId) }
   }, [])
+
+  // If local waiting flag is set (e.g., just created), redirect to waiting screen
+  useEffect(() => {
+    if (waiting) {
+      navigate('/lobby/waiting', { replace: true })
+    }
+  }, [waiting, navigate])
 
   // When landing with created flag, start waiting immediately and set TTL
   useEffect(() => {

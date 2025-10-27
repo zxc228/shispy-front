@@ -55,6 +55,14 @@ export default function useBattleSocket(gameId) {
   }
   const onError = (e) => {
     logger.error('useBattleSocket: error', e)
+    
+    // Handle duplicate connection - show message and redirect
+    if (e?.code === 'DUPLICATE_CONNECTION') {
+      logger.warn('useBattleSocket: duplicate connection detected, old session disconnected')
+      // Could show a toast notification here if you have one
+      // For now, just log and let the new connection take over
+    }
+    
     setLastError(e)
   }
 

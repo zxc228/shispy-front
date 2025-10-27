@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useState } from 'react'
 import AppLayout from './components/layout/AppLayout'
 import MapPage from './pages/Map/MapPage'
 import LivePage from './pages/Live/LivePage'
@@ -11,15 +11,25 @@ import BattlePage from './pages/Battle/BattlePage'
 import CreatePage from './pages/Create/CreatePage'
 import JoinPage from './pages/Join/JoinPage'
 import WaitingScreen from './pages/Lobby/WaitingScreen'
-import DebugConsole from './components/Debug/DebugConsole'
 import SplashScreen from './components/common/SplashScreen'
+import SmartRedirect from './components/routing/SmartRedirect'
+import { logger } from './shared/logger'
+import RulesPage from './pages/Rules/RulesPage'
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true) // Always show on start for now
+  // Quick check: don't show splash if sessionStorage suggests active game
+  // API will do the real check in SmartRedirect
+  const [showSplash, setShowSplash] = useState(() => {
+    const activeGameId = sessionStorage.getItem('active_game_id')
+    const pendingBet = sessionStorage.getItem('pending_bet')
+    const shouldSkipSplash = !!activeGameId || !!pendingBet
+    if (shouldSkipSplash) {
+      logger.info('App: skipping splash due to sessionStorage hint', { activeGameId, pendingBet: !!pendingBet })
+    }
+    return !shouldSkipSplash
+  })
 
   const handleCloseSplash = () => {
-    // TODO: Uncomment later to enable localStorage persistence
-    // localStorage.setItem('splash_seen', 'true')
     setShowSplash(false)
   }
 
@@ -29,7 +39,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/profile" replace />} />
+            <Route index element={<SmartRedirect />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/live" element={<LivePage />} />
             <Route path="/lobby" element={<LobbyPage />} />
@@ -41,10 +51,11 @@ export default function App() {
             <Route path="/battle/:id" element={<BattlePage />} />
             <Route path="/create" element={<CreatePage />} />
             <Route path="/join/:id" element={<JoinPage />} />
+            <Route path="/rules" element={<RulesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
-      <DebugConsole />
+  {/* DebugConsole disabled: keep logging functionality without UI */}
     </>
   )
 }
