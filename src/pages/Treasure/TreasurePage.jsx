@@ -101,7 +101,10 @@ export default function TreasurePage() {
         <>
           {/* Shipsy Treasures — пока в разработке */}
           <div className="h-[320px] rounded-2xl border border-neutral-700 grid place-items-center text-white/70">
-            Shipsy Treasures — в разработке
+            <div className="text-center space-y-2">
+              <div className="text-5xl">🚧</div>
+              <div>Shipsy Treasures — в разработке</div>
+            </div>
           </div>
         </>
       )}
@@ -226,14 +229,33 @@ function StoreCard({
 /* --------- Empty state --------- */
 
 function EmptyInventory() {
+  const handleTreasureClick = () => {
+    // Open Telegram channel/bot
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink('https://t.me/shipsy_treasures')
+    } else {
+      window.open('https://t.me/shipsy_treasures', '_blank')
+    }
+  }
+
   return (
-    <div className="h-[320px] rounded-2xl flex flex-col items-center justify-center gap-4">
+    <div className="h-[320px] rounded-2xl flex flex-col items-center justify-center gap-4 px-4">
       <div className="text-7xl text-neutral-50">😔</div>
-      <div className="text-center">
-        <div className="text-neutral-50 text-lg font-semibold leading-snug">Inventory empty</div>
-        <div className="text-base leading-snug">
-          <span className="text-neutral-50">You can add your Treasure or </span>
-          <span className="text-orange-400">buy them in the store</span>
+      <div className="text-center space-y-2">
+        <div className="text-neutral-50 text-lg font-semibold leading-snug">
+          You don't have any gifts
+        </div>
+        <div className="text-base leading-snug text-neutral-300">
+          Send your gifts to{' '}
+          <button
+            onClick={handleTreasureClick}
+            className="text-orange-400 font-medium hover:text-orange-300 active:text-orange-500 underline decoration-dotted underline-offset-2 transition-colors"
+          >
+            @shipsy_treasures
+          </button>
+        </div>
+        <div className="text-sm leading-snug text-neutral-400 italic">
+          💡 Before sending, send "hi" or a sticker first
         </div>
       </div>
     </div>

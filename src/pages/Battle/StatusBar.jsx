@@ -1,9 +1,8 @@
-export default function StatusBar({ title, showTimer, secondsLeft = 0 }) {
+export default function StatusBar({ title, showTimer, secondsLeft = 0, maxTime = 25 }) {
   const mm = String(Math.floor(Math.max(0, secondsLeft) / 60)).padStart(2, '0')
   const ss = String(Math.max(0, secondsLeft) % 60).padStart(2, '0')
-  // Progress bar: max 25s per turn, calculate percentage
-  const MAX_TURN_TIME = 25
-  const percentage = Math.min(100, Math.max(0, (secondsLeft / MAX_TURN_TIME) * 100))
+  // Progress bar: calculate percentage based on maxTime
+  const percentage = Math.min(100, Math.max(0, (secondsLeft / maxTime) * 100))
   const isLowTime = secondsLeft <= 5
   
   return (

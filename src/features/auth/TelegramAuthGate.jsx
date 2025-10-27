@@ -67,23 +67,26 @@ export default function TelegramAuthGate({ children }) {
   // Add debug logging for status changes
   logger.debug('AuthGate render', { status, isInTelegram })
 
+  // No longer showing splash here - it's in App.jsx now
+  if (isInTelegram && (status === 'idle' || status === 'loading')) {
+    return null // Let the main app handle splash screen
+  }
+
   return (
     <>
       {!isInTelegram && (
-        <div className="px-3 py-2 text-xs text-white/80">
-          Откройте мини-приложение внутри Telegram
+        <div className="min-h-screen w-full bg-black flex items-center justify-center">
+          <div className="px-3 py-2 text-sm text-white/80">
+            Откройте мини-приложение внутри Telegram
+          </div>
         </div>
       )}
-      {isInTelegram && status === 'loading' && (
-        <div className="px-3 py-2 text-xs text-white/60">Проверка подписи…</div>
-      )}
       {isInTelegram && status === 'err' && (
-        <div className="px-3 py-2 text-xs text-red-400">{error}</div>
+        <div className="min-h-screen w-full bg-black flex items-center justify-center">
+          <div className="px-3 py-2 text-sm text-red-400">{error}</div>
+        </div>
       )}
-      {isInTelegram && status === 'ok' && (
-        <div className="px-3 py-2 text-xs text-green-400">Подпись проверена ✓</div>
-      )}
-      {children}
+      {isInTelegram && status === 'ok' && children}
     </>
   )
 }

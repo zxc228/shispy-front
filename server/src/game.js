@@ -38,6 +38,9 @@ class Game {
     }
     this.turn = null // 'a' | 'b'
     this.timer = null
+    this.placingTimer = null // Timer for placing phase
+    this.placingTimeLeft = 20000 // 20 seconds for placing phase
+    this.placingTimerStarted = false // Track if placing timer has started
     this.version = 0
     this.moveIds = { a: new Set(), b: new Set() }
   }
@@ -46,6 +49,7 @@ class Game {
 
   dispose() {
     this.clearTimer()
+    this.clearPlacingTimer()
   }
 
   addPlayer(socket) {
@@ -69,6 +73,8 @@ class Game {
 
     if (this.players.a.sid && this.players.b.sid) {
       this.setPhase('placing')
+      // Start timer immediately when both players connected
+      this.startPlacingTimer()
     }
     this.emitState()
     return role
@@ -78,9 +84,24 @@ class Game {
     for (const role of ['a', 'b']) {
       if (this.players[role].sid === sid) {
         this.players[role].sid = null
+        
+        // If a player disconnects during placing phase, end the game
+        if (this.phase === 'placing' || this.phase === 'waiting_players') {
+          // Find the opponent who stayed
+          const opponent = role === 'a' ? 'b' : 'a'
+          const opponentStillPresent = this.players[opponent].sid !== null
+          
+          if (opponentStillPresent) {
+            // Award win to the player who stayed
+            this.finish(opponent, { reason: 'opponent_disconnected' })
+          } else {
+            // Both disconnected, just clean up
+            this.manager.delete(this.gameId)
+          }
+        }
+        break
       }
     }
-    // Optional: if both left or one leaves early, end game
   }
 
   setPhase(p) {
@@ -107,6 +128,7 @@ class Game {
     if (this.phase !== 'placing' && this.phase !== 'waiting_players') return
     if (typeof cell !== 'number' || cell < 0 || cell > 15) return
     if (this.players[role].secret !== null) return
+    
     this.players[role].secret = cell
     this.bumpVersion()
     this.emitState()
@@ -121,6 +143,7 @@ class Game {
   }
 
   doToss() {
+    this.clearPlacingTimer() // Clear placing timer when moving to toss
     this.setPhase('toss')
     // Random choose starter
     const first = randomInt(0, 2) === 0 ? 'a' : 'b'
@@ -168,6 +191,60 @@ class Game {
 
   clearTimer() { if (this.timer) { clearInterval(this.timer); this.timer = null } }
 
+  startPlacingTimer() {
+    this.clearPlacingTimer()
+    this.placingTimerStarted = true // Mark that timer has started
+    const tickMs = 250
+    this.placingTimer = setInterval(() => {
+      this.placingTimeLeft = Math.max(0, this.placingTimeLeft - tickMs)
+      if (this.placingTimeLeft === 0) {
+        this.clearPlacingTimer()
+        // Time's up in placing phase - find who didn't place their secret
+        const aPlaced = this.players.a.secret !== null
+        const bPlaced = this.players.b.secret !== null
+        
+        if (!aPlaced && !bPlaced) {
+          // Both failed to place - call cancel API
+          this.apiCancel()
+            .then(() => {
+              this.finish(null, { reason: 'placing_timeout_both' })
+            })
+            .catch(() => {
+              // Still finish even if API call fails
+              this.finish(null, { reason: 'placing_timeout_both' })
+            })
+        } else if (!aPlaced) {
+          // Player A didn't place, B wins
+          this.apiConcede('a')
+            .then((rewards) => {
+              this.finish('b', { reason: 'placing_timeout', rewards })
+            })
+            .catch(() => {
+              this.finish('b', { reason: 'placing_timeout' })
+            })
+        } else if (!bPlaced) {
+          // Player B didn't place, A wins
+          this.apiConcede('b')
+            .then((rewards) => {
+              this.finish('a', { reason: 'placing_timeout', rewards })
+            })
+            .catch(() => {
+              this.finish('a', { reason: 'placing_timeout' })
+            })
+        }
+      } else {
+        this.emitState()
+      }
+    }, tickMs)
+  }
+
+  clearPlacingTimer() { 
+    if (this.placingTimer) { 
+      clearInterval(this.placingTimer)
+      this.placingTimer = null 
+    } 
+  }
+
   async move(sid, cell, moveId) {
     const role = this.playerRoleBySid(sid)
     if (!role) return
@@ -205,6 +282,7 @@ class Game {
 
   finish(winner, extra = {}) {
     this.clearTimer()
+    this.clearPlacingTimer()
     this.setPhase('finished')
     this.nsp.to(this.room).emit('game_over', { winner, ...extra })
     this.emitState()
@@ -231,6 +309,8 @@ class Game {
         a: { timeLeft: timeA, present: !!this.players.a.sid },
         b: { timeLeft: timeB, present: !!this.players.b.sid },
       },
+      placingTimeLeft: this.placingTimeLeft, // Send placing timer to client
+      placingTimerStarted: this.placingTimerStarted, // Send timer started flag
       // we do not reveal secrets here
     }
   }
@@ -278,5 +358,17 @@ class Game {
     const res = await api.post('/lobby/concede', { game_id: Number(this.gameId), tuid: winnerTuid })
     // Backend returns gifts array directly
     return Array.isArray(res?.data) ? res.data : []
+  }
+  
+  async apiCancel() {
+    // Cancel game when both players failed to place
+    // Use first available token (prefer player A)
+    const role = this.players.a.token ? 'a' : (this.players.b.token ? 'b' : null)
+    if (!role) {
+      console.warn('apiCancel: no token available for cancel request')
+      return
+    }
+    const api = this.axiosFor(role)
+    await api.post('/lobby/cancel_game', { game_id: Number(this.gameId) })
   }
 }

@@ -23,9 +23,9 @@ export default function BottomNav() {
   const { pathname } = useLocation();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm h-16 pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-l from-neutral-900 to-neutral-900 border-t border-white/25 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="mx-auto max-w-[390px] w-full px-4 h-full">
+      <div className="mx-auto max-w-[390px] w-full px-4 h-16">
         <ul className="grid grid-cols-5 h-full">
         {tabs.map((t) => (
           <li key={t.to} className="h-full flex">
@@ -40,7 +40,7 @@ export default function BottomNav() {
                 ].join(' ');
               }}
             >
-              <div className="flex flex-col items-center justify-center gap-1.5 h-full w-full">
+              <div className="flex flex-col items-center justify-center gap-1.5">
                 <img
                   src={t.icon}
                   alt={`${t.label} icon`}

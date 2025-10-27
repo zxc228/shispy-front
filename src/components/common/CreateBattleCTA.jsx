@@ -7,10 +7,12 @@ export default function CreateBattleCTA({ onClick }) {
   return (
     <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] px-4 z-40">
       <div className="mx-auto max-w-[390px] w-full relative">
+        {/* glow под кнопкой */}
+        <div className="absolute inset-0 h-12 p-3 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
         <button
           type="button"
           onClick={handleClick}
-          className="h-12 w-full bg-gradient-to-l from-white to-gray-200 rounded-xl shadow-[inset_0_-1px_0_0_rgba(206,196,189,1)] text-neutral-800 font-semibold active:translate-y-[0.5px] animate-[pulse-glow_2s_ease-in-out_infinite]"
+          className="h-12 w-full bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform duration-150"
         >
           Create Battle
         </button>
