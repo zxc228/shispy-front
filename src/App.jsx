@@ -12,6 +12,7 @@ import CreatePage from './pages/Create/CreatePage'
 import JoinPage from './pages/Join/JoinPage'
 import WaitingScreen from './pages/Lobby/WaitingScreen'
 import SplashScreen from './components/common/SplashScreen'
+import DebugConsole from './components/Debug/DebugConsole'
 import SmartRedirect from './components/routing/SmartRedirect'
 import { logger } from './shared/logger'
 import RulesPage from './pages/Rules/RulesPage'
@@ -55,7 +56,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-  {/* DebugConsole disabled: keep logging functionality without UI */}
+    <DebugConsole />
     </>
   )
 }
