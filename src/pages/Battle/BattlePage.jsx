@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import StatusBar from './StatusBar'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
+import WinIcon from '../../components/icons/WinIcon.png'
+import DefeatIcon from '../../components/icons/DefeatIcon.png'
 import BattleCell from './BattleCell'
 import Confetti from '../../components/animations/Confetti'
 // REST battle APIs removed from this component in realtime mode
@@ -78,8 +80,8 @@ export default function BattlePage() {
   const { title, showTimer } = useMemo(() => {
     switch (mode) {
       case 'waitingForPlayers':
-        // Waiting for second player to join the game
-        return { title: 'Waiting for opponent to join...', showTimer: false }
+        // Waiting for second player to join the game - show timer
+        return { title: 'Waiting for opponent to join...', showTimer: true }
       case 'selectShip':
       case 'selectShipSelected':
         // Show timer in placing phase (timer starts when both players connected)
@@ -148,7 +150,12 @@ export default function BattlePage() {
     }
     
     // Update timer based on phase
-    if (battle.phase === 'placing') {
+    if (battle.phase === 'waiting_players') {
+      // Use waiting timer
+      const seconds = Math.ceil((battle.waitingTimeLeft || 0) / 1000)
+      logger.debug('BattlePage: updating waiting timer', { waitingTimeLeft: battle.waitingTimeLeft, seconds })
+      setSecondsLeft(seconds)
+    } else if (battle.phase === 'placing') {
       // Use placing timer
       const seconds = Math.ceil((battle.placingTimeLeft || 0) / 1000)
       logger.debug('BattlePage: updating placing timer', { placingTimeLeft: battle.placingTimeLeft, seconds })
@@ -196,7 +203,7 @@ export default function BattlePage() {
       logger.info('BattlePage: game finished')
       return
     }
-  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.placingTimeLeft, battle.placingTimerStarted, battle.toss, placedSecret, tossShown, mode])
+  }, [battle.useRealtime, battle.phase, battle.role, battle.turn, battle.timeLeft, battle.placingTimeLeft, battle.placingTimerStarted, battle.waitingTimeLeft, battle.toss, placedSecret, tossShown, mode])
 
   // Apply move results to grid and finish state in realtime
   useEffect(() => {
@@ -239,6 +246,19 @@ export default function BattlePage() {
     // Clear active game from sessionStorage when game ends
     sessionStorage.removeItem('active_game_id')
     logger.info('BattlePage: cleared active game ID on game over')
+    
+    // Handle case when second player didn't join
+    if (battle.gameOver.reason === 'opponent_not_joined') {
+      // Game cancelled because opponent didn't join - show refund message
+      setSheet({
+        variant: 'lose', // Use 'lose' variant to show neutral message
+        amount: 0,
+        gifts: [],
+        message: 'Opponent did not join. Your bet has been refunded.'
+      })
+      setMode('win') // Use same mode to allow clicking through overlay
+      return
+    }
     
     // Handle case when both players failed (winner is null)
     if (battle.gameOver.winner === null) {
@@ -438,6 +458,25 @@ export default function BattlePage() {
       {sheet && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { navigate('/lobby') }} />
+          
+          {/* Victory/Defeat Icon - centered above the sheet */}
+          {sheet.amount > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ paddingBottom: '30vh' }}>
+              <img 
+                src={sheet.variant === 'win' ? WinIcon : DefeatIcon} 
+                alt={sheet.variant === 'win' ? 'Victory' : 'Defeat'}
+                className="object-contain animate-[zoomIn_0.6s_ease-out]"
+                style={{
+                  width: '512px',
+                  height: 'auto',
+                  maxWidth: '90vw',
+                  filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8))',
+                  animation: 'zoomIn 0.6s ease-out, float 3s ease-in-out infinite'
+                }}
+              />
+            </div>
+          )}
+          
           <div className="fixed left-0 right-0 bottom-0 z-50">
             <div className="mx-auto max-w-[390px] bg-black rounded-t-2xl outline outline-1 outline-neutral-700 p-3 flex flex-col" style={{ height: '52vh' }}>
               <div className="flex items-center justify-between">
@@ -463,9 +502,13 @@ export default function BattlePage() {
                   <div className="text-center text-neutral-400">
                     <div className="text-4xl mb-3">⏱️</div>
                     <div className="text-sm">
-                      Time's up! Both players failed to select a cell.
-                      <br />
-                      The game has been cancelled.
+                      {sheet.message || (
+                        <>
+                          Time's up! Both players failed to select a cell.
+                          <br />
+                          The game has been cancelled.
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ export default function useBattleSocket(gameId) {
   const [timeLeft, setTimeLeft] = useState({ a: 25000, b: 25000 })
   const [placingTimeLeft, setPlacingTimeLeft] = useState(60000)
   const [placingTimerStarted, setPlacingTimerStarted] = useState(false)
+  const [waitingTimeLeft, setWaitingTimeLeft] = useState(20000) // Waiting for second player timer
   const [lastMove, setLastMove] = useState(null)
   const [toss, setToss] = useState(null)
   const [gameOver, setGameOver] = useState(null)
@@ -40,6 +41,7 @@ export default function useBattleSocket(gameId) {
       setTimeLeft({ a: st?.players?.a?.timeLeft ?? 25000, b: st?.players?.b?.timeLeft ?? 25000 })
       setPlacingTimeLeft(st?.placingTimeLeft ?? 60000)
       setPlacingTimerStarted(st?.placingTimerStarted ?? false)
+      setWaitingTimeLeft(st?.waitingTimeLeft ?? 20000)
     }
     const onToss = (data) => {
       logger.info('useBattleSocket: toss', data)
@@ -92,6 +94,7 @@ export default function useBattleSocket(gameId) {
     timeLeft,
     placingTimeLeft,
     placingTimerStarted,
+    waitingTimeLeft,
   lastMove,
   gameOver,
   lastError,
@@ -114,7 +117,7 @@ export default function useBattleSocket(gameId) {
       logger.info('useBattleSocket: → move', { cell, moveId })
       s.emit('move', { cell, moveId })
     },
-  }), [connected, ready, role, phase, turn, timeLeft, placingTimeLeft, placingTimerStarted, lastMove, toss, gameOver, lastError])
+  }), [connected, ready, role, phase, turn, timeLeft, placingTimeLeft, placingTimerStarted, waitingTimeLeft, lastMove, toss, gameOver, lastError])
 
   return api
 }

@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   const apiBase = env.VITE_API_BASE || 'http://95.165.31.225:55555/'
   return {
     plugins: [react(), tailwindcss()],
+    assetsInclude: ['**/*.tgs'], // Add support for TGS files
     server: {
       host: true,
       port: 5173,

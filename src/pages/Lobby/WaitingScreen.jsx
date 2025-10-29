@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { getWaitingStatus, cancelLobby } from '../../shared/api/lobby.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
+import TgsSticker from '../../components/common/TgsSticker'
+import cannonTgs from '../../components/tgs/Cannon.tgs'
 
 export default function WaitingScreen() {
   const navigate = useNavigate()
@@ -149,10 +151,14 @@ export default function WaitingScreen() {
         <>
           {/* Animated ship/treasure icon */}
           <div className="mb-8 relative">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400/20 to-amber-600/20 flex items-center justify-center animate-pulse">
-              <div className="text-6xl animate-[spin_3s_linear_infinite]">
-                🎁
-              </div>
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400/20 to-amber-600/20 flex items-center justify-center">
+              <TgsSticker 
+                src={cannonTgs}
+                width={100}
+                height={100}
+                loop={true}
+                autoplay={true}
+              />
             </div>
             {/* Ripple effect */}
             <div className="absolute inset-0 rounded-full border-4 border-orange-400/30 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]"></div>

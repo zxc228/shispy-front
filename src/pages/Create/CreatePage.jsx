@@ -104,7 +104,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
   return (
     <div className="min-h-[100dvh] w-full max-w-[390px] mx-auto bg-black text-white flex flex-col">
       {/* scroll area (контент), сохраняем «гуттер» скроллбара */}
-      <main className="flex-1 overflow-y-auto px-2.5 pt-2 pb-[calc(152px+env(safe-area-inset-bottom))] [scrollbar-gutter:stable_both-edges]">
+      <main className="flex-1 overflow-y-auto px-2.5 pt-2 pb-[calc(184px+env(safe-area-inset-bottom))] [scrollbar-gutter:stable_both-edges]">
         {loading ? (
           // Skeleton loading state
           <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
@@ -264,7 +264,7 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
 function SummaryFooter({ selectedCount, totalTon, onCreate }) {
   const disabled = selectedCount === 0
   return (
-  <div className="fixed left-0 right-0 bottom-[calc(56px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
+  <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
         <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
           <div className="flex flex-col items-center gap-1.5 text-center">

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TgsSticker from '../../components/common/TgsSticker'
+import mapTgs from '../../components/tgs/Map.tgs'
 
 export default function MapPage() {
   const navigate = useNavigate()
@@ -27,7 +29,14 @@ export default function MapPage() {
 
         {/* Пустое состояние */}
         <div className="w-80 mx-auto min-h-[60vh] flex flex-col items-center justify-center gap-4">
-          <div className="text-7xl">🗺️</div>
+          {/* TGS Sticker instead of emoji */}
+          <TgsSticker 
+            src={mapTgs}
+            width={120}
+            height={120}
+            loop={true}
+            autoplay={true}
+          />
           <div className="flex flex-col items-center gap-1">
             <div className="text-neutral-50 text-xl font-medium text-center">
               The mode is under development now.

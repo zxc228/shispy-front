@@ -263,6 +263,20 @@
 	50% { transform: translateY(-10px); }
 }
 
+@keyframes zoomIn {
+	0% {
+		transform: scale(0) rotate(-10deg);
+		opacity: 0;
+	}
+	60% {
+		transform: scale(1.1) rotate(5deg);
+	}
+	100% {
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+}
+
 @keyframes pulse-glow {
 	0%, 100% { 
 		box-shadow: 0 0 10px rgba(251, 146, 60, 0.5);

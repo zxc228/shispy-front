@@ -41,6 +41,8 @@ class Game {
     this.placingTimer = null // Timer for placing phase
     this.placingTimeLeft = 20000 // 20 seconds for placing phase
     this.placingTimerStarted = false // Track if placing timer has started
+    this.waitingTimer = null // Timer for waiting_players phase
+    this.waitingTimeLeft = 20000 // 20 seconds for second player to join
     this.version = 0
     this.moveIds = { a: new Set(), b: new Set() }
   }
@@ -50,6 +52,7 @@ class Game {
   dispose() {
     this.clearTimer()
     this.clearPlacingTimer()
+    this.clearWaitingTimer()
     // Clear any disconnect timeouts
     if (this.disconnectTimeouts) {
       for (const role in this.disconnectTimeouts) {
@@ -115,9 +118,13 @@ class Game {
     console.log(`[Game ${this.gameId}] Player ${role} joined (tuid: ${newTuid})`)
 
     if (this.players.a.sid && this.players.b.sid) {
+      this.clearWaitingTimer() // Both players joined, clear waiting timer
       this.setPhase('placing')
       // Start timer immediately when both players connected
       this.startPlacingTimer()
+    } else {
+      // First player joined, start waiting timer for second player
+      this.startWaitingTimer()
     }
     this.emitState()
     return role
@@ -307,6 +314,44 @@ class Game {
     } 
   }
 
+  startWaitingTimer() {
+    this.clearWaitingTimer()
+    const tickMs = 250
+    this.waitingTimer = setInterval(() => {
+      this.waitingTimeLeft = Math.max(0, this.waitingTimeLeft - tickMs)
+      if (this.waitingTimeLeft === 0) {
+        this.clearWaitingTimer()
+        console.log(`[Game ${this.gameId}] Waiting timeout - second player didn't join`)
+        
+        // Find which player is present
+        const presentRole = this.players.a.sid ? 'a' : (this.players.b.sid ? 'b' : null)
+        
+        if (presentRole) {
+          // Cancel game and refund to present player
+          this.apiCancel()
+            .then(() => {
+              this.finish(null, { reason: 'opponent_not_joined' })
+            })
+            .catch(() => {
+              this.finish(null, { reason: 'opponent_not_joined' })
+            })
+        } else {
+          // No players present, just cleanup
+          this.manager.delete(this.gameId)
+        }
+      } else {
+        this.emitState()
+      }
+    }, tickMs)
+  }
+
+  clearWaitingTimer() {
+    if (this.waitingTimer) {
+      clearInterval(this.waitingTimer)
+      this.waitingTimer = null
+    }
+  }
+
   async move(sid, cell, moveId) {
     const role = this.playerRoleBySid(sid)
     if (!role) return
@@ -373,6 +418,7 @@ class Game {
       },
       placingTimeLeft: this.placingTimeLeft, // Send placing timer to client
       placingTimerStarted: this.placingTimerStarted, // Send timer started flag
+      waitingTimeLeft: this.waitingTimeLeft, // Send waiting timer to client
       // we do not reveal secrets here
     }
   }
