@@ -1,4 +1,4 @@
-import api, { apiLocal } from './client'
+import { getApiInstance } from './client'
 
 // GET /treasury/retrieve_gifts
 // Expected server responses supported:
@@ -6,9 +6,8 @@ import api, { apiLocal } from './client'
 // - { data: Array<...>, ... }
 // - { gifts: Array<...>, ... }
 export async function getTreasuryGifts() {
-  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
-  const client = useSameOrigin ? apiLocal : api
-  const res = await client.get('/treasury/retrieve_gifts')
+  const apiInstance = getApiInstance()
+  const res = await apiInstance.get('/treasury/retrieve_gifts')
   const body = res.data
   if (Array.isArray(body)) return body
   if (Array.isArray(body?.data)) return body.data

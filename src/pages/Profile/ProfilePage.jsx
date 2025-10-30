@@ -121,10 +121,7 @@ export default function ProfilePage() {
             {connectedAddress || wallet || '—'}
           </div>
           <div className="mt-2 flex items-center gap-2">
-            {/* TON Connect пока неактивна */}
-            <div className="opacity-50 pointer-events-none" title="TON Connect будет подключен позже">
-              <TonConnectButton />
-            </div>
+            <TonConnectButton />
           </div>
         </div>
       </section>
