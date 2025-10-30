@@ -108,4 +108,14 @@ function addInterceptors(instance) {
 addInterceptors(api)
 addInterceptors(apiLocal)
 
+/**
+ * Get the appropriate API instance based on the environment
+ * In production (https), use apiLocal which targets /api via nginx proxy
+ * In development (http), use api which targets VITE_API_BASE
+ */
+export function getApiInstance() {
+  const useSameOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  return useSameOrigin ? apiLocal : api
+}
+
 export default api
