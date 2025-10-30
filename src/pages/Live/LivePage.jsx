@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import TgsSticker from '../../components/common/TgsSticker'
+import HatTgs from '../../components/tgs/Hat.tgs'
 
 export default function LivePage() {
   const navigate = useNavigate()
@@ -27,7 +29,9 @@ export default function LivePage() {
 
         {/* Пустое состояние */}
         <div className="w-80 mx-auto min-h-[60vh] flex flex-col items-center justify-center gap-4">
-          <div className="text-7xl">🎥</div>
+          <div className="w-24 h-24">
+            <TgsSticker src={HatTgs} autoplay loop />
+          </div>
           <div className="flex flex-col items-center gap-1">
             <div className="text-neutral-50 text-xl font-medium text-center">
               The mode is under development now.

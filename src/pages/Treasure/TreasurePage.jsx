@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import EmptyGiftSvg from "../../components/icons/EmptyGift.svg";
 import TonSvg from "../../components/icons/TonIcon.svg";
 import { getTreasuryGifts } from "../../shared/api/treasury.api";
+import TgsSticker from "../../components/common/TgsSticker";
+import ChestTgs from "../../components/tgs/Chest.tgs";
 
 export default function TreasurePage() {
   // My gifts loaded from backend
@@ -81,20 +83,18 @@ export default function TreasurePage() {
         </div>
       ) : tab === "my" ? (
         <div className="animate-[fadeIn_0.3s_ease-out]">
-          {/* Сетка инвентаря с Add карточкой первой */}
-          <Grid3>
-            {/* Add new Treasure как первая карточка (неактивна) */}
-            <AddNewTreasureCardInGrid />
-            {/* Остальные подарки */}
-            {myItems.map((it) => (
-              <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
-            ))}
-          </Grid3>
           {/* Показываем empty state если нет подарков */}
-          {myItems.length === 0 && (
-            <div className="mt-4">
-              <EmptyInventory />
-            </div>
+          {myItems.length === 0 ? (
+            <EmptyInventory />
+          ) : (
+            <Grid3>
+              {/* Add new Treasure как первая карточка (неактивна) */}
+              <AddNewTreasureCardInGrid />
+              {/* Остальные подарки */}
+              {myItems.map((it) => (
+                <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
+              ))}
+            </Grid3>
           )}
         </div>
       ) : (
@@ -240,7 +240,9 @@ function EmptyInventory() {
 
   return (
     <div className="h-[320px] rounded-2xl flex flex-col items-center justify-center gap-4 px-4">
-      <div className="text-7xl text-neutral-50">😔</div>
+      <div className="w-24 h-24">
+        <TgsSticker src={ChestTgs} autoplay loop />
+      </div>
       <div className="text-center space-y-2">
         <div className="text-neutral-50 text-lg font-semibold leading-snug">
           You don't have any gifts
