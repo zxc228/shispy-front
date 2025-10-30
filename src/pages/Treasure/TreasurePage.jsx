@@ -4,10 +4,12 @@ import TonSvg from "../../components/icons/TonIcon.svg";
 import { getTreasuryGifts } from "../../shared/api/treasury.api";
 import TgsSticker from "../../components/common/TgsSticker";
 import ChestTgs from "../../components/tgs/Chest.tgs";
+import { transformGiftsData } from "../../shared/utils/gifts";
 
 export default function TreasurePage() {
   // My gifts loaded from backend
   const [myItems, setMyItems] = useState([]);
+  const [gwc, setGwc] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,29 +20,28 @@ export default function TreasurePage() {
         setLoading(true);
         const res = await getTreasuryGifts();
         if (cancelled) return;
-        const gifts = Array.isArray(res) ? res : [];
-        // map gifts to UI items
-        setMyItems(
-          gifts.map((g, idx) => {
-            const rawPhoto = g?.photo || null;
-            // Если backend возвращает base64 без data: префикса — добавим его
-            const photo = typeof rawPhoto === 'string' && rawPhoto.length > 0
-              ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:')
-                  ? rawPhoto
-                  : `data:image/png;base64,${rawPhoto}`)
-              : null;
-
-            return {
-              id: g?.gid ?? idx,
-              title: g?.slug || "Treasure",
-              priceTon: Number(g?.value ?? 0),
-              photo,
-            }
-          })
-        );
+        
+        // Debug: log raw response
+        console.log('🎁 Treasury gifts raw response:', JSON.stringify(res, null, 2));
+        console.log('🎁 GWC:', res.gwc);
+        console.log('🎁 Gifts array:', res.gifts);
+        res.gifts?.forEach((gift, idx) => {
+          console.log(`🎁 Gift ${idx}:`, {
+            gid: gift.gid,
+            value: gift.value,
+            slug: gift.slug
+          });
+        });
+        
+        // New API returns: { gwc: number, gifts: [{ gid, value, slug }] }
+        setGwc(res.gwc || 0);
+        const transformedGifts = transformGiftsData(res.gifts || []);
+        console.log('🎁 Transformed gifts:', transformedGifts);
+        setMyItems(transformedGifts);
       } catch (e) {
         if (cancelled) return;
         setError("Не удалось загрузить подарки");
+        console.error('Failed to load treasury gifts:', e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -92,7 +93,13 @@ export default function TreasurePage() {
               <AddNewTreasureCardInGrid />
               {/* Остальные подарки */}
               {myItems.map((it) => (
-                <MyTreasureCard key={it.id} title={it.title} photo={it.photo} priceTon={it.priceTon} />
+                <MyTreasureCard 
+                  key={it.id} 
+                  title={it.slug} 
+                  tgsUrl={it.tgsUrl} 
+                  value={it.value}
+                  slug={it.slug}
+                />
               ))}
             </Grid3>
           )}
@@ -164,22 +171,32 @@ function Grid3({ children }) {
 
 /* --------- Cards --------- */
 
-// Inventory card (простая заглушка со свето-рамкой)
-function MyTreasureCard({ title, photo, priceTon }) {
+// Inventory card with TGS sticker support
+function MyTreasureCard({ title, tgsUrl, value, slug }) {
   return (
     <div className="rounded-[10px] p-[1px] bg-[linear-gradient(135deg,#f59e0b,#ef4444)]">
       <div className="relative rounded-[10px] min-h-32 bg-neutral-800/30 border border-neutral-700
                       flex flex-col items-center justify-center px-2 py-3">
-        <img
-          src={photo || EmptyGiftSvg}
-          alt="Treasure"
-          className="w-10 h-10 opacity-80 object-contain"
-          referrerPolicy="no-referrer"
-          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = EmptyGiftSvg; }}
-        />
-        {/* Только число без названия и без TON-текста */}
+        {/* TGS Sticker Animation */}
+        {tgsUrl ? (
+          <TgsSticker
+            src={tgsUrl}
+            width={40}
+            height={40}
+            loop={true}
+            autoplay={true}
+            className="opacity-80"
+          />
+        ) : (
+          <img
+            src={EmptyGiftSvg}
+            alt="Treasure"
+            className="w-10 h-10 opacity-80 object-contain"
+          />
+        )}
+        {/* Price display */}
         <div className="mt-2 text-base font-semibold text-white">
-          {Number(priceTon ?? 0).toFixed(2)}
+          {Number(value ?? 0).toFixed(2)}
         </div>
       </div>
     </div>

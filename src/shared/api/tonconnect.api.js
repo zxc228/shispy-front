@@ -1,9 +1,9 @@
 import { getApiInstance } from './client'
 
-// GET /tonconnect/payload -> { payload: string, expireAt?: number }
+// GET /tonconnect/generate_payload -> { payload: string, expires_at?: number }
 export async function getTonConnectPayload() {
   const apiInstance = getApiInstance()
-  const res = await apiInstance.get('/tonconnect/payload')
+  const res = await apiInstance.get('/tonconnect/generate_payload')
   return res.data
 }
 

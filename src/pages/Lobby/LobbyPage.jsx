@@ -9,6 +9,7 @@ import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { useGameSocket } from '../../providers/GameSocketProvider'
+import { getGiftTgsUrl } from '../../shared/utils/gifts'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
@@ -144,27 +145,33 @@ export default function LobbyPage() {
 
         const minBet = betArr.length > 0 ? Number((betArr[0]?.value ?? betArr[0]?.price ?? 0)) : 0
         const giftCount = betArr.length
-        const giftPhotos = betArr.slice(0, 3).map((b, idx) => {
-          if (!b) return ''
+        
+        // New API: gifts now have { gid, value, slug } structure
+        // Extract slug from bet items and generate TGS URLs
+        const giftTgsUrls = betArr.slice(0, 3).map((b) => {
+          if (!b) return null
+          
+          // New format: { gid, value, slug }
+          if (typeof b === 'object' && b.slug) {
+            return getGiftTgsUrl(b.slug)
+          }
+          
+          // Legacy format fallback (if needed)
           if (typeof b === 'string') {
             const result = normalizePhoto(b)
-            logger.debug(`LobbyPage: gift ${idx} string conversion`, { hasResult: !!result, sample: b.slice(0, 50) })
+            logger.debug(`LobbyPage: gift legacy string`, { hasResult: !!result })
             return result
           }
+          
           if (typeof b === 'object') {
-            // try common keys then deep
             const photoField = b.photo || b.photo_url || b.image || b.img || b.base64 || b.photo_base64 || b.thumbnail || b.thumb
-            logger.debug(`LobbyPage: gift ${idx} object`, { 
-              hasPhotoField: !!photoField, 
-              photoSample: photoField ? String(photoField).slice(0, 50) : 'none' 
-            })
             const direct = normalizePhoto(photoField)
             const result = direct || extractImageDeep(b)
-            logger.debug(`LobbyPage: gift ${idx} final result`, { hasResult: !!result, resultSample: result ? result.slice(0, 80) : 'none' })
-            return result
+            return result || null
           }
-          return ''
-        })
+          
+          return null
+        }).filter(Boolean)
 
         return {
           id: String(item?.queque_id ?? item?.tuid ?? Math.random()),
@@ -173,7 +180,7 @@ export default function LobbyPage() {
           minBet,
           ton: Number(item?.value ?? 0),
           giftCount,
-          giftPhotos,
+          giftTgsUrls, // Changed from giftPhotos to giftTgsUrls
           photo: normalizePhoto(item?.photo_url) || '',
         }
       }) : []

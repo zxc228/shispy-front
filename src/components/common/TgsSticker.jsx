@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Lottie from 'lottie-react'
 import pako from 'pako'
+import { logger } from '../../shared/logger'
 
 /**
  * TgsSticker component for displaying Telegram TGS stickers
@@ -38,18 +39,24 @@ export default function TgsSticker({
       try {
         setLoading(true)
         setError(null)
+        
+        logger.debug('TgsSticker: loading', { src })
 
         // Fetch the file
         const response = await fetch(src)
+        logger.debug('TgsSticker: response', { status: response.status, statusText: response.statusText })
+        
         if (!response.ok) {
-          throw new Error(`Failed to load sticker: ${response.status}`)
+          throw new Error(`Failed to load sticker: ${response.status} ${response.statusText}`)
         }
 
         const contentType = response.headers.get('content-type')
+        logger.debug('TgsSticker: content-type', { contentType })
         
         // Check if it's already JSON
         if (contentType?.includes('application/json')) {
           const json = await response.json()
+          logger.debug('TgsSticker: loaded as JSON')
           if (!cancelled) {
             setAnimationData(json)
           }
@@ -59,16 +66,20 @@ export default function TgsSticker({
         // Otherwise, treat as TGS (gzipped)
         const arrayBuffer = await response.arrayBuffer()
         const compressed = new Uint8Array(arrayBuffer)
+        logger.debug('TgsSticker: loaded as binary', { size: compressed.length })
         
         // Decompress using pako
         const decompressed = pako.ungzip(compressed, { to: 'string' })
+        logger.debug('TgsSticker: decompressed', { size: decompressed.length })
         const json = JSON.parse(decompressed)
+        logger.debug('TgsSticker: parsed JSON ok')
         
         if (!cancelled) {
           setAnimationData(json)
         }
       } catch (err) {
-        console.error('TgsSticker: Failed to load', err)
+        // Подсказки: CORS/403/404 часто указывают на неверный путь/права
+        logger.error('TgsSticker: failed to load', { src, error: err?.message, stack: err?.stack })
         if (!cancelled) {
           setError(err.message)
         }
@@ -104,6 +115,7 @@ export default function TgsSticker({
       <div 
         className={`flex items-center justify-center ${className}`}
         style={{ width: `${width}px`, height: `${height}px` }}
+        title={`Error loading TGS: ${error}`}
       >
         <div className="text-2xl opacity-50">❌</div>
       </div>

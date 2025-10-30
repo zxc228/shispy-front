@@ -2,8 +2,9 @@ import React from 'react'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import TreasureSvg from '../../components/icons/EmptyGift.svg'
 import HostPlaceholder from '../../components/icons/EmptyPerson.svg'
+import TgsSticker from '../../components/common/TgsSticker'
 
-/** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
+/** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; giftTgsUrls:string[]; giftCount:number }} Room */
 
 export default function LobbyCard({ room, onJoin, isNew = false }) {
   const KeyIcon = () => (
@@ -51,14 +52,24 @@ export default function LobbyCard({ room, onJoin, isNew = false }) {
       <div className="flex items-center gap-3">
         {/* gifts preview (fixed width to stabilize Join button position) */}
         <div className="flex items-center gap-2 w-40 shrink-0">
-          {(room.giftPhotos || []).slice(0, 2).map((src, i) => (
+          {(room.giftTgsUrls || []).slice(0, 2).map((tgsUrl, i) => (
             <div key={i} className="w-12 h-12 rounded-[10px] border border-zinc-500 bg-neutral-900 flex items-center justify-center overflow-hidden">
-              <img
-                src={src || TreasureSvg}
-                alt="Gift"
-                className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = TreasureSvg }}
-              />
+              {tgsUrl && tgsUrl.endsWith('.tgs') ? (
+                <TgsSticker
+                  src={tgsUrl}
+                  width={48}
+                  height={48}
+                  loop={true}
+                  autoplay={true}
+                />
+              ) : (
+                <img
+                  src={tgsUrl || TreasureSvg}
+                  alt="Gift"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = TreasureSvg }}
+                />
+              )}
             </div>
           ))}
           {room.giftCount > 2 && (

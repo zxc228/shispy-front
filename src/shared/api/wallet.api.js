@@ -1,31 +1,11 @@
 import { getApiInstance } from './client'
 
-// POST /wallet { wallet }
-export async function setWallet(wallet) {
-  const apiInstance = getApiInstance()
-  const res = await apiInstance.post('/wallet', { wallet })
-  return res.data
-}
+// Эти методы больше не нужны - баланс храним локально, wallet сохраняется через tonconnect/verify
 
-// GET /wallet -> { wallet: string }
-export async function getWallet() {
-  const apiInstance = getApiInstance()
-  const res = await apiInstance.get('/wallet')
-  return res.data
-}
-
-// POST /wallet/invoice { amount }
-export async function createInvoice(amount) {
-  const apiInstance = getApiInstance()
-  const res = await apiInstance.post('/wallet/invoice', { amount })
-  return res.data
-}
-
-// GET /wallet/balance -> { amount: number }
+// Метод оставляем для совместимости, но теперь баланс локальный
 export async function getBalance() {
-  const apiInstance = getApiInstance()
-  const res = await apiInstance.get('/wallet/balance')
-  return res.data
+  // Баланс теперь хранится локально, возвращаем заглушку
+  return { amount: 0 }
 }
 
-export default { setWallet, getWallet, createInvoice, getBalance }
+export default { getBalance }

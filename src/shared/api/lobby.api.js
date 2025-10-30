@@ -7,13 +7,22 @@ export async function getQueue() {
   return res.data
 }
 
-// GET /lobby/retrieve_gifts -> { gifts: [{ gid, value, slug, photo }] }
+// GET /lobby/retrieve_gifts -> [{ gid: string, value: number, slug: string }]
 export async function getGifts() {
   const apiInstance = getApiInstance()
   const res = await apiInstance.get('/lobby/retrieve_gifts')
   const data = res.data
-  const gifts = Array.isArray(data) ? data : (Array.isArray(data?.gifts) ? data.gifts : [])
-  return { gifts }
+  
+  // New API returns array directly: [{ gid, value, slug }]
+  if (Array.isArray(data)) {
+    return data
+  }
+  
+  // Fallback for unexpected formats
+  if (Array.isArray(data?.gifts)) return data.gifts
+  if (Array.isArray(data?.data)) return data.data
+  
+  return []
 }
 
 // POST /lobby/create_battle { gifts: string[] } -> { status: boolean }

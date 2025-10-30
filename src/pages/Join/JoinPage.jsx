@@ -5,8 +5,10 @@ import TonSvg from '../../components/icons/TonIcon.svg'
 import { getGifts, joinBattle } from '../../shared/api/lobby.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
+import { transformGiftsData } from '../../shared/utils/gifts'
+import TgsSticker from '../../components/common/TgsSticker'
 
-/** @typedef {{ id: string; image?: string|null; priceTON: number }} Treasure */
+/** @typedef {{ id: string; gid: string; slug: string; value: number; tgsUrl: string }} Treasure */
 
 export default function JoinPage() {
   const navigate = useNavigate()
@@ -25,21 +27,13 @@ export default function JoinPage() {
         setLoading(true)
         const res = await withLoading(() => getGifts())
         if (cancelled) return
-        const gifts = Array.isArray(res?.gifts) ? res.gifts : []
-        const mapped = gifts.map((g) => {
-          const rawPhoto = g?.photo || null
-          const image = typeof rawPhoto === 'string' && rawPhoto.length > 0
-            ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:')
-                ? rawPhoto
-                : `data:image/png;base64,${rawPhoto}`)
-            : null
-          return {
-            id: String(g?.gid ?? ''),
-            image,
-            priceTON: Number(g?.value ?? 0),
-          }
-        })
-        setInventory(mapped)
+        // getGifts() возвращает массив [{ gid, value, slug }]
+        const gifts = Array.isArray(res) ? res : (Array.isArray(res?.gifts) ? res.gifts : Array.isArray(res?.data) ? res.data : [])
+        logger.debug('JoinPage: getGifts result', { res, giftsCount: gifts.length })
+        // Используем transformGiftsData для генерации tgsUrl (как в TreasurePage)
+        const transformed = transformGiftsData(gifts)
+        logger.debug('JoinPage: transformed inventory', { count: transformed.length, sample: transformed[0] })
+        setInventory(transformed)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -48,21 +42,22 @@ export default function JoinPage() {
     return () => { cancelled = true }
   }, [])
 
-  const defaultView = inventory.length === 0 ? 'empty' : 'choose'
-  const [view, setView] = useState(defaultView)
+  const [view, setView] = useState('choose') // Всегда стартуем с 'choose', чтобы показать skeleton
   const [selectedIds, setSelectedIds] = useState([])
 
-  // when inventory arrives, switch to choose view automatically
+  // Когда инвентарь загрузился — переключаем view
   useEffect(() => {
-    if (inventory.length > 0 && view !== 'choose') {
+    if (!loading && inventory.length === 0) {
+      setView('empty')
+    } else if (!loading && inventory.length > 0) {
       setView('choose')
     }
-  }, [inventory])
+  }, [loading, inventory.length])
 
   const selectedCount = selectedIds.length
   const totalTon = useMemo(() => {
     const sum = selectedIds
-      .map((tid) => inventory.find((t) => t.id === tid)?.priceTON ?? 0)
+      .map((tid) => inventory.find((t) => t.id === tid)?.value ?? 0)
       .reduce((a, b) => a + b, 0)
     return Number(sum.toFixed(2))
   }, [selectedIds, inventory])
@@ -98,7 +93,7 @@ export default function JoinPage() {
         // Save bet to sessionStorage for battle page to show on loss
         const selectedGifts = selectedIds.map(tid => inventory.find(t => t.id === tid)).filter(Boolean)
         const betData = {
-          gifts: selectedGifts.map(g => ({ gid: String(g.id), value: g.priceTON, slug: `gift-${g.id}`, photo: g.image || '' })),
+          gifts: selectedGifts.map(g => ({ gid: String(g.id), value: g.value, slug: g.slug, tgsUrl: g.tgsUrl })),
           total: totalTon
         }
         sessionStorage.setItem(`battle_bet_${gameId}`, JSON.stringify(betData))
@@ -276,10 +271,16 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       onClick={onToggle}
       className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden active:scale-95 transition-transform`}
     >
-      {treasure?.image ? (
-        <div className="w-full h-full p-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={treasure.image} alt="Treasure" className="w-full h-full object-cover rounded-[8px]" />
+      {treasure?.tgsUrl ? (
+        <div className="w-full h-full grid place-items-center p-2">
+          <TgsSticker
+            src={treasure.tgsUrl}
+            width={60}
+            height={60}
+            loop={true}
+            autoplay={true}
+            className="opacity-90"
+          />
         </div>
       ) : (
         <div className="w-full h-full bg-neutral-700 grid place-items-center p-2">

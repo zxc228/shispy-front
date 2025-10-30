@@ -6,7 +6,6 @@ import ProfileSvg from '../../components/icons/ProfileIcon.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
-import { getWallet, setWallet } from '../../shared/api/wallet.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
@@ -19,7 +18,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [walletStatus, setWalletStatus] = useState('')
-  const [wallet, setWalletValue] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
   const connectedAddress = useTonAddress() // user-friendly address if connected
   const [tonConnectUI] = useTonConnectUI()
@@ -40,14 +38,6 @@ export default function ProfilePage() {
   const prof = await withLoading(() => getProfile())
         if (cancelled) return
         setProfile(prof)
-        // also load wallet
-        try {
-          const wres = await withLoading(() => getWallet())
-          if (!cancelled) setWalletValue(wres?.wallet ?? '')
-        } catch (e) {
-          if (!cancelled) setWalletValue('')
-          logger.error('ProfilePage: getWallet error', e)
-        }
       } catch (e) {
         if (cancelled) return
         setError('Не удалось загрузить профиль')
@@ -116,9 +106,9 @@ export default function ProfilePage() {
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
-          {/* If TON is connected, show connected address (shortened); otherwise show server-stored value */}
+          {/* TON Connect address display */}
           <div className="text-center text-neutral-700 text-xs font-mono font-normal max-w-[260px] truncate">
-            {connectedAddress || wallet || '—'}
+            {connectedAddress || '—'}
           </div>
           <div className="mt-2 flex items-center gap-2">
             <TonConnectButton />

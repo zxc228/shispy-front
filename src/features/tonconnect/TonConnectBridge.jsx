@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react'
 import { useIsConnectionRestored, useTonConnectUI, useTonWallet } from '@tonconnect/ui-react'
 import { getTonConnectPayload, verifyTonConnectProof } from '../../shared/api/tonconnect.api'
-import { setWallet as apiSetWallet } from '../../shared/api/wallet.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { useBalance } from '../../providers/BalanceProvider'
+import { getToken } from '../../shared/api/client'
 
 /**
  * TonConnectBridge
  * - Before connect: requests payload from backend and sets it via setConnectRequestParameters
- * - After connect: verifies proof with backend and stores wallet address ONLY if verified
- * - On disconnect: clears wallet and refreshes balance
+ * - After connect: verifies proof with backend (wallet address saves automatically on backend)
+ * - On disconnect: refreshes balance
  * - Handles payload expiration and auto-reset
+ * - Requires Telegram auth (token) before requesting payload
  */
 export default function TonConnectBridge() {
   const [tonConnectUI] = useTonConnectUI()
@@ -24,12 +25,20 @@ export default function TonConnectBridge() {
   const expireTimeoutRef = useRef(null)
 
   // Prepare payload when no wallet connected (once or after expiration)
+  // IMPORTANT: Only after Telegram auth (token present)
   useEffect(() => {
     let cancelled = false
     async function prepare() {
       if (!restored) return
       if (wallet) return
       if (preparedRef.current) return
+      
+      // Wait for Telegram auth token before requesting payload
+      const token = getToken()
+      if (!token) {
+        logger.info('TonConnectBridge: waiting for Telegram auth before requesting payload')
+        return
+      }
       try {
         preparedRef.current = true
         tonConnectUI.setConnectRequestParameters({ state: 'loading' })
@@ -69,8 +78,17 @@ export default function TonConnectBridge() {
       }
     }
     prepare()
+    
+    // Check for token periodically (every 1s) until we have it
+    const checkTokenInterval = setInterval(() => {
+      if (getToken() && !preparedRef.current && !wallet) {
+        prepare()
+      }
+    }, 1000)
+    
     return () => {
       cancelled = true
+      clearInterval(checkTokenInterval)
       if (expireTimeoutRef.current) {
         clearTimeout(expireTimeoutRef.current)
         expireTimeoutRef.current = null
@@ -101,9 +119,8 @@ export default function TonConnectBridge() {
           logger.debug('TonConnectBridge: verify result', res)
 
           if (res?.verified === true) {
-            // Proof verified successfully - save wallet address
-            logger.info('TonConnectBridge: proof verified, saving wallet')
-            await apiSetWallet(address)
+            // Proof verified successfully - wallet saved on backend automatically
+            logger.info('TonConnectBridge: proof verified successfully')
             await refreshBalance(true)
           } else {
             // Verification failed - disconnect wallet

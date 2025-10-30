@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import TonSvg from '../../components/icons/TonIcon.svg'
-import { createInvoice } from '../../shared/api/wallet.api'
+// import { createInvoice } from '../../shared/api/wallet.api'
 import { logger } from '../../shared/logger'
 
 export default function AddPage() {
@@ -32,17 +32,17 @@ export default function AddPage() {
     if (!valid || busy) return
     try {
       setBusy(true)
-      setStatus('Создание счёта…')
-      const amt = Number(amount)
-      const res = await createInvoice(amt)
-      const link = res?.link
-      if (typeof link === 'string' && link) {
-        // Открываем в новой вкладке/встроенном браузере Telegram
-        window.open(link, '_blank', 'noopener,noreferrer')
-        setStatus('Ссылка на оплату открыта')
-      } else {
-        setStatus('Ссылка на оплату не получена')
-      }
+      setStatus('Функция пополнения временно недоступна')
+      // TODO: Implement invoice creation when backend endpoint is ready
+      // const amt = Number(amount)
+      // const res = await createInvoice(amt)
+      // const link = res?.link
+      // if (typeof link === 'string' && link) {
+      //   window.open(link, '_blank', 'noopener,noreferrer')
+      //   setStatus('Ссылка на оплату открыта')
+      // } else {
+      //   setStatus('Ссылка на оплату не получена')
+      // }
     } catch (e) {
       logger?.error?.('createInvoice error', e)
       setStatus('Ошибка при создании счёта')
