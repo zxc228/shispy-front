@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useIsConnectionRestored, useTonConnectUI, useTonWallet } from '@tonconnect/ui-react'
-import { getTonConnectPayload, verifyTonConnectProof } from '../../shared/api/tonconnect.api'
+import { initTonConnectSession, verifyTonConnectSignature } from '../../shared/api/tonconnect.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { useBalance } from '../../providers/BalanceProvider'
@@ -8,11 +8,10 @@ import { getToken } from '../../shared/api/client'
 
 /**
  * TonConnectBridge
- * - Before connect: requests payload from backend and sets it via setConnectRequestParameters
- * - After connect: verifies proof with backend (wallet address saves automatically on backend)
+ * - Before connect: requests nonce from backend and sets it via setConnectRequestParameters
+ * - After connect: verifies signature with backend using publicKey, signature, and nonce
  * - On disconnect: refreshes balance
- * - Handles payload expiration and auto-reset
- * - Requires Telegram auth (token) before requesting payload
+ * - Requires Telegram auth (token) before requesting nonce
  */
 export default function TonConnectBridge() {
   const [tonConnectUI] = useTonConnectUI()
@@ -21,10 +20,9 @@ export default function TonConnectBridge() {
   const { withLoading } = useLoading()
   const { refresh: refreshBalance } = useBalance()
   const preparedRef = useRef(false)
-  const payloadRef = useRef(null)
-  const expireTimeoutRef = useRef(null)
+  const sessionDataRef = useRef(null)
 
-  // Prepare payload when no wallet connected (once or after expiration)
+  // Prepare nonce when no wallet connected
   // IMPORTANT: Only after Telegram auth (token present)
   useEffect(() => {
     let cancelled = false
@@ -33,46 +31,35 @@ export default function TonConnectBridge() {
       if (wallet) return
       if (preparedRef.current) return
       
-      // Wait for Telegram auth token before requesting payload
+      // Wait for Telegram auth token before requesting nonce
       const token = getToken()
       if (!token) {
-        logger.info('TonConnectBridge: waiting for Telegram auth before requesting payload')
+        logger.info('TonConnectBridge: waiting for Telegram auth before requesting nonce')
         return
       }
       try {
         preparedRef.current = true
         tonConnectUI.setConnectRequestParameters({ state: 'loading' })
-        const res = await withLoading(() => getTonConnectPayload())
-        const payload = res?.payload
-        const expireAt = res?.expireAt
+        
+        // Get new session ID and nonce from backend
+        const sessionData = await withLoading(() => initTonConnectSession())
         
         if (cancelled) return
         
-        if (payload) {
-          payloadRef.current = { payload, expireAt }
-          tonConnectUI.setConnectRequestParameters({ state: 'ready', value: { tonProof: payload } })
-          
-          // Setup expiration timer if expireAt is provided
-          if (expireAt) {
-            const now = Date.now()
-            const expiresIn = expireAt * 1000 - now
-            if (expiresIn > 0) {
-              if (expireTimeoutRef.current) clearTimeout(expireTimeoutRef.current)
-              expireTimeoutRef.current = setTimeout(() => {
-                logger.info('TonConnectBridge: payload expired, resetting')
-                tonConnectUI.setConnectRequestParameters(null)
-                payloadRef.current = null
-                preparedRef.current = false
-                // Re-prepare new payload
-                prepare()
-              }, expiresIn)
-            }
-          }
+        if (sessionData?.nonce) {
+          sessionDataRef.current = sessionData
+          // Set nonce as tonProof payload
+          tonConnectUI.setConnectRequestParameters({ 
+            state: 'ready', 
+            value: { tonProof: sessionData.nonce } 
+          })
+          logger.info('TonConnectBridge: nonce prepared', { sessionId: sessionData.sessionId })
         } else {
           tonConnectUI.setConnectRequestParameters(null)
+          preparedRef.current = false
         }
       } catch (e) {
-        logger.warn('TonConnectBridge: payload fetch failed', e)
+        logger.warn('TonConnectBridge: nonce fetch failed', e)
         tonConnectUI.setConnectRequestParameters(null)
         preparedRef.current = false
       }
@@ -89,21 +76,19 @@ export default function TonConnectBridge() {
     return () => {
       cancelled = true
       clearInterval(checkTokenInterval)
-      if (expireTimeoutRef.current) {
-        clearTimeout(expireTimeoutRef.current)
-        expireTimeoutRef.current = null
-      }
     }
   }, [restored, wallet, tonConnectUI, withLoading])
 
-  // On connect -> verify proof and save wallet ONLY if verified
-  // On disconnect -> clear wallet and refresh balance
+  // On connect -> verify signature with backend
+  // On disconnect -> refresh balance
   useEffect(() => {
     const off = tonConnectUI.onStatusChange(async (w) => {
       try {
         if (!w) {
-          // Disconnected - refresh balance
+          // Disconnected - refresh balance and reset preparation
           logger.info('TonConnectBridge: wallet disconnected')
+          preparedRef.current = false
+          sessionDataRef.current = null
           await refreshBalance(true)
           return
         }
@@ -113,33 +98,101 @@ export default function TonConnectBridge() {
           ? w.connectItems.tonProof.proof
           : null
 
-        if (proof && address) {
-          logger.debug('TonConnectBridge: verifying proof for', address)
-          const res = await verifyTonConnectProof(address, proof)
-          logger.debug('TonConnectBridge: verify result', res)
+        if (proof && address && sessionDataRef.current) {
+          logger.info('TonConnectBridge: verifying signature for', address)
+          logger.info('TonConnectBridge: proof data', JSON.stringify(proof, null, 2))
+          logger.info('TonConnectBridge: wallet account', JSON.stringify(w.account, null, 2))
+          logger.info('TonConnectBridge: session data', sessionDataRef.current)
+          
+          // Extract signature and payload from proof
+          const { signature, payload, domain, timestamp } = proof
+          
+          // Get public key from wallet
+          // TON Connect provides publicKey in hex format in account
+          const publicKey = w.account?.publicKey
+          
+          if (!publicKey) {
+            logger.warn('TonConnectBridge: no public key in wallet account')
+            if (window.Telegram?.WebApp?.showAlert) {
+              window.Telegram.WebApp.showAlert('Wallet connection error: missing public key')
+            }
+            await tonConnectUI.disconnect()
+            return
+          }
+          
+          // The nonce from backend is in URL-safe base64 format
+          // For TON Connect proof verification, we need to reconstruct the signed message
+          // TON Connect signs a message with format: domain + timestamp + payload (nonce)
+          // The signature from proof is already in base64 format
+          
+          logger.info('TonConnectBridge: nonce from session (URL-safe)', sessionDataRef.current.nonce)
+          logger.info('TonConnectBridge: payload from proof', payload)
+          logger.info('TonConnectBridge: signature from proof', signature)
+          logger.info('TonConnectBridge: publicKey from account', publicKey)
+          logger.info('TonConnectBridge: domain', domain)
+          logger.info('TonConnectBridge: timestamp', timestamp)
+          
+          // Prepare verification data - send all proof data to backend for verification
+          const verifyData = {
+            publicKey: publicKey,
+            address: address,
+            signature: signature,
+            payload: payload, // Send payload as-is from TON Connect proof (URL-safe base64)
+            domain: domain.value,
+            timestamp: timestamp,
+            session: sessionDataRef.current.sessionId,
+          }
+          
+          logger.info('TonConnectBridge: sending verification', JSON.stringify(verifyData, null, 2))
+          
+          let res
+          try {
+            res = await verifyTonConnectSignature(verifyData)
+            logger.info('TonConnectBridge: verify result', JSON.stringify(res, null, 2))
+          } catch (error) {
+            logger.error('TonConnectBridge: verify API call failed', error)
+            logger.error('TonConnectBridge: error details', JSON.stringify(error, null, 2))
+            
+            if (window.Telegram?.WebApp?.showAlert) {
+              window.Telegram.WebApp.showAlert(`Connection error: ${error.message || 'Unknown error'}`)
+            }
+            
+            sessionDataRef.current = null
+            await tonConnectUI.disconnect()
+            return
+          }
 
-          if (res?.verified === true) {
-            // Proof verified successfully - wallet saved on backend automatically
-            logger.info('TonConnectBridge: proof verified successfully')
+          if (res?.ok === true) {
+            // Signature verified successfully - wallet saved on backend
+            logger.info('TonConnectBridge: signature verified successfully', { wallet: res.wallet })
+            sessionDataRef.current = null // Clear session data
             await refreshBalance(true)
           } else {
             // Verification failed - disconnect wallet
-            const reason = res?.reason || 'Proof verification failed'
-            logger.warn('TonConnectBridge: proof verification failed:', reason)
+            const error = res?.error || 'Signature verification failed'
+            logger.warn('TonConnectBridge: signature verification failed:', error)
             
             // Show error to user via Telegram WebApp if available
             if (window.Telegram?.WebApp?.showAlert) {
-              window.Telegram.WebApp.showAlert(`Wallet verification failed: ${reason}`)
+              window.Telegram.WebApp.showAlert(`Wallet verification failed: ${error}`)
             }
             
             // Disconnect the wallet
+            sessionDataRef.current = null
             await tonConnectUI.disconnect()
           }
         } else if (address && !proof) {
           // No proof provided - disconnect
           logger.warn('TonConnectBridge: no proof provided, disconnecting')
           if (window.Telegram?.WebApp?.showAlert) {
-            window.Telegram.WebApp.showAlert('Wallet connection requires proof verification')
+            window.Telegram.WebApp.showAlert('Wallet connection requires signature verification')
+          }
+          await tonConnectUI.disconnect()
+        } else if (!sessionDataRef.current) {
+          // No session data (shouldn't happen normally)
+          logger.warn('TonConnectBridge: no session data available')
+          if (window.Telegram?.WebApp?.showAlert) {
+            window.Telegram.WebApp.showAlert('Connection error: session expired')
           }
           await tonConnectUI.disconnect()
         }
@@ -149,6 +202,7 @@ export default function TonConnectBridge() {
         if (window.Telegram?.WebApp?.showAlert) {
           window.Telegram.WebApp.showAlert('Connection error. Please try again.')
         }
+        sessionDataRef.current = null
         await tonConnectUI.disconnect()
       }
     })
