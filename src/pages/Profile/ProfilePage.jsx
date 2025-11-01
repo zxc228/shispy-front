@@ -8,7 +8,8 @@ import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
-// TonConnect temporarily disabled: keep placeholder button
+import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
+import { getApiInstance } from '../../shared/api/client'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -19,13 +20,94 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [walletStatus, setWalletStatus] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
-  const connectedAddress = null
+  const [tonConnectUI] = useTonConnectUI()
+  const userAddressFriendly = useTonAddress() // отображать в UI
+  const connectedAddress = userAddressFriendly || null
 
   // Derived data from Telegram user
   const displayName = user?.username
     ? `@${user.username}`
     : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || '—'
   const avatarSrc = user?.photo_url || EmptyPersonSvg
+
+  // Universal helper для получения proof (под любые версии SDK)
+  async function requestProofAny(tonConnectUI, payload) {
+    // 1) современный API
+    if (typeof tonConnectUI.requestProof === 'function') {
+      const res = await tonConnectUI.requestProof({ payload })
+      return { proof: res?.proof, wallet: tonConnectUI.wallet }
+    }
+    // 2) низкоуровневый API
+    if (tonConnectUI.connector && typeof tonConnectUI.connector.requestProof === 'function') {
+      const res = await tonConnectUI.connector.requestProof({ payload })
+      return { proof: res?.proof, wallet: tonConnectUI.wallet }
+    }
+    // 3) fallback через connect parameters + reconnect
+    const wasConnected = !!tonConnectUI.wallet
+    tonConnectUI.setConnectRequestParameters({ state: 'ready', value: { tonProof: payload } })
+    if (wasConnected) { try { await tonConnectUI.disconnect() } catch {} }
+
+    return await new Promise((resolve, reject) => {
+      const off = tonConnectUI.onStatusChange((wallet) => {
+        if (!wallet) return
+        off()
+        const proof = wallet.connectItems?.tonProof?.proof
+        if (proof) resolve({ proof, wallet })
+        else reject(new Error('Wallet connected without proof'))
+      })
+      tonConnectUI.openModal().catch((e) => {
+        off()
+        reject(e)
+      })
+    }).finally(() => {
+      try { tonConnectUI.setConnectRequestParameters(null) } catch {}
+    })
+  }
+
+  // Кнопка «Подтвердить» (тон-пруф + верификация)
+  async function handleConfirmWallet() {
+    try {
+      setWalletStatus('Получаю nonce...')
+      const session = crypto.randomUUID()
+      const apiInstance = getApiInstance()
+
+      const nonceResp = await apiInstance.post('/tonconnect/nonce', { session })
+      const nonceData = nonceResp.data
+      if (!nonceData?.nonce) throw new Error('Nonce malformed')
+
+      setWalletStatus('Запрашиваю подтверждение в кошельке...')
+      const { proof } = await requestProofAny(tonConnectUI, nonceData.nonce)
+
+      // после proof возьми актуальный аккаунт
+      await new Promise(r => setTimeout(r, 0))
+      const account = tonConnectUI.wallet?.account
+      if (!account) throw new Error('No wallet account after proof')
+
+      const domainStr = typeof proof.domain === 'string' ? proof.domain : proof.domain?.value
+
+      const verifyResp = await apiInstance.post('/tonconnect/verify', {
+        session,
+        publicKey: account.publicKey,
+        address:  account.address, // raw для бэка
+        proof: {
+          signature: proof.signature,
+          payload:   proof.payload,
+          domain:    domainStr,
+          timestamp: proof.timestamp
+        }
+      })
+
+      const verifyData = verifyResp.data
+
+      if (verifyData?.status) {
+        setWalletStatus(`Кошелёк подтверждён: ${verifyData.address || account.address}`)
+      } else {
+        throw new Error('Verification failed')
+      }
+    } catch (e) {
+      setWalletStatus(`Ошибка: ${e?.message || String(e)}`)
+    }
+  }
 
   // Load profile data from backend (authorized by token). Wait for authDone.
   useEffect(() => {
@@ -110,15 +192,26 @@ export default function ProfilePage() {
             {connectedAddress || '—'}
           </div>
           <div className="mt-2 flex items-center gap-2">
+            {/* Кнопка подключения/меню кошелька */}
+            <TonConnectButton className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white text-sm" />
+
+            {/* Подтвердить (тон-пруф) */}
             <button
               type="button"
-              disabled
-              title={'Ton Connect (soon)'}
-              className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white/70 text-sm cursor-not-allowed"
+              onClick={handleConfirmWallet}
+              disabled={!connectedAddress}
+              className={`px-3 py-2 rounded-lg border text-sm ${connectedAddress
+                ? 'bg-neutral-800 border-neutral-700 text-white'
+                : 'bg-neutral-900 border-neutral-800 text-white/50 cursor-not-allowed'}`}
+              title="Подтвердить кошелёк"
             >
-              {'Ton Connect (soon)'}
+              Подтвердить
             </button>
           </div>
+          {/* Статус под кнопками */}
+          {walletStatus && (
+            <div className="mt-2 text-xs text-white/70">{walletStatus}</div>
+          )}
         </div>
       </section>
 
