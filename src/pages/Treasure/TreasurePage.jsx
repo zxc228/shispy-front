@@ -249,9 +249,9 @@ function EmptyInventory() {
   const handleTreasureClick = () => {
     // Open Telegram channel/bot
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink('https://t.me/shipsy_treasures')
+      window.Telegram.WebApp.openTelegramLink('https://t.me/shipsy_treasure')
     } else {
-      window.open('https://t.me/shipsy_treasures', '_blank')
+      window.open('https://t.me/shipsy_treasure', '_blank')
     }
   }
 
@@ -270,7 +270,7 @@ function EmptyInventory() {
             onClick={handleTreasureClick}
             className="text-orange-400 font-medium hover:text-orange-300 active:text-orange-500 underline decoration-dotted underline-offset-2 transition-colors"
           >
-            @shipsy_treasures
+            @shipsy_treasure
           </button>
         </div>
         <div className="text-sm leading-snug text-neutral-400 italic">

@@ -8,7 +8,7 @@ import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
-import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
+// TonConnect temporarily disabled: keep placeholder button
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -19,8 +19,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [walletStatus, setWalletStatus] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
-  const connectedAddress = useTonAddress() // user-friendly address if connected
-  const [tonConnectUI] = useTonConnectUI()
+  const connectedAddress = null
 
   // Derived data from Telegram user
   const displayName = user?.username
@@ -40,7 +39,7 @@ export default function ProfilePage() {
         setProfile(prof)
       } catch (e) {
         if (cancelled) return
-        setError('Не удалось загрузить профиль')
+  setError('Failed to load profile')
         logger.error('ProfilePage: getProfile error', e)
       } finally {
         if (!cancelled) setLoading(false)
@@ -111,7 +110,14 @@ export default function ProfilePage() {
             {connectedAddress || '—'}
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <TonConnectButton />
+            <button
+              type="button"
+              disabled
+              title={'Ton Connect (soon)'}
+              className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white/70 text-sm cursor-not-allowed"
+            >
+              {'Ton Connect (soon)'}
+            </button>
           </div>
         </div>
       </section>
@@ -135,7 +141,7 @@ export default function ProfilePage() {
             <div className="text-neutral-50 text-lg font-medium font-sans">{Number(profile?.value ?? 0).toFixed(2)}</div>
             <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain translate-y-[0.5px]" />
           </div>
-          <div className="text-white/50 text-xs font-normal font-sans">Wons TON</div>
+          <div className="text-white/50 text-xs font-normal font-sans">Won TON</div>
         </div>
       </section>
 
@@ -188,7 +194,7 @@ export default function ProfilePage() {
       {/* GAME HISTORY (from backend) */}
       <section className="w-full px-2.5">
     <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 space-y-2">
-      <div className="text-neutral-50 text-base font-semibold font-sans">Game history</div>
+  <div className="text-neutral-50 text-base font-semibold font-sans">Game history</div>
 
         {/* tabs */}
         <div className="flex gap-1.5">
@@ -255,7 +261,7 @@ export default function ProfilePage() {
               )
             })
           ) : (
-            <div className="text-white/40 text-xs">{loading ? 'Загрузка…' : 'Нет истории игр'}</div>
+            <div className="text-white/40 text-xs">{loading ? 'Loading…' : 'No game history'}</div>
           )}
         </div>
     </div>

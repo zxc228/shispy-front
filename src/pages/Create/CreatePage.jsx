@@ -39,16 +39,7 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
     return () => { cancelled = true }
   }, [])
 
-  const [view, setView] = useState('choose') // Всегда стартуем с 'choose', чтобы показать skeleton
-
-  useEffect(() => {
-    // Когда инвентарь загрузился и пуст — переключаем на empty
-    if (!loading && inventory.length === 0) {
-      setView('empty')
-    } else if (!loading && inventory.length > 0) {
-      setView('choose')
-    }
-  }, [loading, inventory.length])
+  // View always stays on picker; if inventory is empty, user will see the "Add new Treasure" card
   const [selectedIds, setSelectedIds] = useState([])
 
   const selectedCount = selectedIds.length
@@ -110,13 +101,6 @@ export default function CreatePage({ onAddTreasure, onCreateBattle }) {
               ))}
             </div>
           </div>
-        ) : view === 'empty' ? (
-          <EmptyInventoryBlock
-            onAddTreasure={() => {
-              setView('choose')
-              handleAddTreasure()
-            }}
-          />
         ) : (
           <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
             <h2 className="px-1 text-xl font-medium leading-none text-neutral-50">

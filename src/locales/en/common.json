@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "map": "Maps",
+    "live": "Live",
+    "lobby": "Lobby",
+    "treasure": "Treasure",
+    "profile": "Profile"
+  },
+  "header": {
+    "title": "Shipsy",
+    "subtitle": "For fights For player",
+    "add": "Add",
+    "add_aria": "Add TON (coming soon)",
+    "add_title": "The feature will be available later",
+    "ton_tooltip": "TON Connect will be connected later"
+  },
+  "lang": {
+    "en": "EN",
+    "ru": "RU",
+    "toggle_aria": "Toggle language"
+  },
+  "profile": {
+    "profile_load_error": "Failed to load profile",
+    "connect_button_soon": "Ton Connect (soon)",
+    "win_games": "Win games",
+    "all_games": "All games",
+    "won_ton": "Won TON",
+    "game_guide_title": "Game Guide",
+    "game_guide_subtitle": "How it works, fees, timing",
+    "open": "Open",
+    "history_title": "Game history",
+    "tab_new": "New",
+    "tab_last": "Last",
+    "tab_wins": "Wins",
+    "tab_lose": "Lose",
+    "loading": "Loading…",
+    "no_history": "No game history",
+    "opponent": "Opponent"
+  }
+}

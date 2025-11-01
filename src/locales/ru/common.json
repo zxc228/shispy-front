@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "map": "Карта",
+    "live": "Онлайн",
+    "lobby": "Лобби",
+    "treasure": "Клад",
+    "profile": "Профиль"
+  },
+  "header": {
+    "title": "Shipsy",
+    "subtitle": "For fights For player",
+    "add": "Пополнить",
+    "add_aria": "Пополнить TON (скоро)",
+    "add_title": "Функция будет доступна позже",
+    "ton_tooltip": "TON Connect будет подключен позже"
+  },
+  "lang": {
+    "en": "EN",
+    "ru": "RU",
+    "toggle_aria": "Переключить язык"
+  },
+  "profile": {
+    "profile_load_error": "Не удалось загрузить профиль",
+    "connect_button_soon": "Ton Connect (скоро)",
+    "win_games": "Выигрышей",
+    "all_games": "Всего игр",
+    "won_ton": "Выиграно TON",
+    "game_guide_title": "Правила игры",
+    "game_guide_subtitle": "Как это работает, комиссии, тайминги",
+    "open": "Открыть",
+    "history_title": "История игр",
+    "tab_new": "Новые",
+    "tab_last": "Старые",
+    "tab_wins": "Победы",
+    "tab_lose": "Поражения",
+    "loading": "Загрузка…",
+    "no_history": "Нет истории игр",
+    "opponent": "Соперник"
+  }
+}

@@ -42,17 +42,10 @@ export default function JoinPage() {
     return () => { cancelled = true }
   }, [])
 
-  const [view, setView] = useState('choose') // Всегда стартуем с 'choose', чтобы показать skeleton
   const [selectedIds, setSelectedIds] = useState([])
 
   // Когда инвентарь загрузился — переключаем view
-  useEffect(() => {
-    if (!loading && inventory.length === 0) {
-      setView('empty')
-    } else if (!loading && inventory.length > 0) {
-      setView('choose')
-    }
-  }, [loading, inventory.length])
+  // Keep single chooser view; if inventory is empty, user will see only the "Add new Treasure" card
 
   const selectedCount = selectedIds.length
   const totalTon = useMemo(() => {
@@ -150,13 +143,6 @@ export default function JoinPage() {
               ))}
             </div>
           </div>
-        ) : view === 'empty' ? (
-          <EmptyInventoryBlock
-            onAddTreasure={() => {
-              setView('choose')
-              handleAddTreasure()
-            }}
-          />
         ) : (
           <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
             <h2 className="px-1 text-xl font-medium leading-none text-neutral-50">

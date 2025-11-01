@@ -16,6 +16,7 @@ import DebugConsole from './components/Debug/DebugConsole'
 import SmartRedirect from './components/routing/SmartRedirect'
 import { logger } from './shared/logger'
 import RulesPage from './pages/Rules/RulesPage'
+// import I18nProvider from './providers/I18nProvider'
 
 export default function App() {
   // Quick check: don't show splash if sessionStorage suggests active game
@@ -37,9 +38,10 @@ export default function App() {
   return (
     <>
       {showSplash && <SplashScreen onClose={handleCloseSplash} />}
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
+      {/* I18n disabled temporarily */}
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}> 
             <Route index element={<SmartRedirect />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/live" element={<LivePage />} />
@@ -53,9 +55,9 @@ export default function App() {
             <Route path="/create" element={<CreatePage />} />
             <Route path="/join/:id" element={<JoinPage />} />
             <Route path="/rules" element={<RulesPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            </Route>
+          </Routes>
+        </BrowserRouter>
     <DebugConsole />
     </>
   )
