@@ -11,6 +11,7 @@ import Confetti from '../../components/animations/Confetti'
 import { logger } from '../../shared/logger'
 import { useTelegram } from '../../providers/TelegramProvider'
 import useBattleSocket from '../../hooks/useBattleSocket'
+import { useTonPayment } from '../../hooks/useTonPayment'
 
 /** @typedef {"idle"|"selected"|"hit"|"miss"|"disabled"} CellState */
 /** @typedef {"selectShip"|"selectShipSelected"|"selectShipWaiting"|"myTurn"|"myTurnSelected"|"myTurnFiring"|"myTurnMiss"|"enemyTurn"|"myTurnHit"|"win"} BattleMode */
@@ -37,6 +38,9 @@ export default function BattlePage() {
   const [tossInfo, setTossInfo] = useState(null)
   const [tossShown, setTossShown] = useState(false) // Track if toss was already shown
   const [myBet, setMyBet] = useState(null) // Store player's bet for showing on loss
+  const [paymentStatus, setPaymentStatus] = useState('') // '', 'requesting', 'confirming', 'confirmed', 'error'
+  const { requestDeposit, pollDepositStatus, hasWallet } = useTonPayment()
+  const paymentProcessedRef = useRef(false)
 
   // Normalize gift photos: ensure http/data prefix for base64 payloads
   const normalizeGifts = (arr) => {
@@ -108,6 +112,55 @@ export default function BattlePage() {
   // disable interactions in these modes
   const gridDisabled = ['waitingForPlayers', 'selectShipWaiting', 'myTurnFiring', 'enemyTurn', 'win'].includes(mode)
 
+  // Process game payment when both players connected
+  async function processGamePayment() {
+    logger.info('BattlePage: starting game payment process')
+    
+    try {
+      // Check if wallet is connected
+      if (!hasWallet) {
+        logger.warn('BattlePage: wallet not connected, skipping payment')
+        setPaymentStatus('error')
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert('Wallet not connected. Please connect your TON wallet to play.')
+        }
+        return
+      }
+      
+      setPaymentStatus('requesting')
+      logger.info('BattlePage: requesting deposit transaction')
+      
+      // Request deposit transaction (action: 'game', amount: 1)
+      const depositId = await requestDeposit({ action: 'game', amount: 1 })
+      
+      setPaymentStatus('confirming')
+      logger.info('BattlePage: transaction sent, polling status', { depositId })
+      
+      // Poll deposit status (2 minutes, 10 second intervals)
+      const confirmed = await pollDepositStatus({ 
+        id: depositId, 
+        action: 'game',
+        maxAttempts: 12, // 2 minutes
+        intervalMs: 10000 // 10 seconds
+      })
+      
+      if (confirmed) {
+        setPaymentStatus('confirmed')
+        logger.info('BattlePage: payment confirmed, game can proceed')
+      } else {
+        throw new Error('Payment confirmation timeout')
+      }
+    } catch (e) {
+      logger.error('BattlePage: payment failed', e)
+      setPaymentStatus('error')
+      
+      // Show error to user
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert(`Payment failed: ${e.message || e}. You may need to reconnect.`)
+      }
+    }
+  }
+
   // Disable legacy polling entirely in realtime migration
   useEffect(() => { return () => {} }, [])
 
@@ -176,6 +229,13 @@ export default function BattlePage() {
     if (battle.phase === 'placing') {
       logger.info('BattlePage: setting mode for placing phase', { placedSecret })
       setMode(placedSecret ? 'selectShipWaiting' : 'selectShip')
+      
+      // Trigger payment when both players connected (placing phase starts)
+      if (!paymentProcessedRef.current) {
+        paymentProcessedRef.current = true
+        processGamePayment()
+      }
+      
       return
     }
     if (battle.phase === 'toss') {
@@ -392,6 +452,47 @@ export default function BattlePage() {
     <div className="min-h-[812px] w-full max-w-[390px] mx-auto bg-black text-white relative">
       {/* Confetti on win */}
       {showConfetti && <Confetti duration={4000} particleCount={80} />}
+      
+      {/* Payment overlay */}
+      {paymentStatus && paymentStatus !== 'confirmed' && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+          <div className="bg-neutral-900 rounded-2xl p-6 max-w-[320px] mx-4 border border-neutral-700">
+            <div className="flex flex-col items-center gap-4">
+              {paymentStatus === 'requesting' && (
+                <>
+                  <div className="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-white">Requesting Payment</h3>
+                  <p className="text-sm text-neutral-400 text-center">
+                    Please confirm the transaction in your wallet
+                  </p>
+                </>
+              )}
+              {paymentStatus === 'confirming' && (
+                <>
+                  <div className="animate-pulse w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <span className="text-2xl">⏳</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Confirming Payment</h3>
+                  <p className="text-sm text-neutral-400 text-center">
+                    Waiting for blockchain confirmation...
+                  </p>
+                </>
+              )}
+              {paymentStatus === 'error' && (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <span className="text-2xl">❌</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-red-400">Payment Failed</h3>
+                  <p className="text-sm text-neutral-400 text-center">
+                    Unable to process payment. Please check your wallet.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Content region (no global scroll; reserve room for CTA+tabbar) */}
       <div className="absolute inset-x-0 top-0 bottom-[calc(136px+env(safe-area-inset-bottom))] overflow-y-auto px-2.5 pt-2">

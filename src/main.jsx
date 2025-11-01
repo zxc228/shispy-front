@@ -8,6 +8,7 @@ import { LoadingProvider } from './providers/LoadingProvider.jsx'
 import { BalanceProvider } from './providers/BalanceProvider.jsx'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import { GameSocketProvider } from './providers/GameSocketProvider.jsx'
+import TonConnectBridge from './features/tonconnect/TonConnectBridge.jsx'
 
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`
 
@@ -17,7 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 			<LoadingProvider>
 				<BalanceProvider>
 					<GameSocketProvider>
-					{/* TonConnectBridge temporarily disabled */}
+					<TonConnectBridge />
 					<App />
 					</GameSocketProvider>
 				</BalanceProvider>

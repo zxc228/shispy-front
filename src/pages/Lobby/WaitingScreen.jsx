@@ -73,6 +73,8 @@ export default function WaitingScreen() {
         if (res?.status === -1 && Number.isFinite(Number(res?.game_id))) {
           const gameId = Number(res.game_id)
           
+          logger.info('WaitingScreen: opponent found, navigating to battle', { gameId })
+          
           // Показываем анимацию "Opponent found!"
           setFoundOpponent(true)
           
@@ -89,7 +91,8 @@ export default function WaitingScreen() {
             logger.warn('WaitingScreen: failed to transfer bet', e)
           }
 
-          // Задержка 1.5 секунды для показа анимации
+          // Задержка 1.5 секунды для показа анимации, затем переход в батл
+          // Payment будет обработан в BattlePage когда оба игрока подключатся
           setTimeout(() => {
             navigate(`/lobby/battle/${gameId}`, { replace: true })
           }, 1500)

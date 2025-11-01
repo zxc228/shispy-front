@@ -1,0 +1,27 @@
+10:11:59 PM [DEBUG] GameSocket: waiting for auth token...
+10:11:59 PM [DEBUG] GameSocket: waiting for auth token...
+10:11:59 PM [INFO ] TelegramProvider: authenticating via /auth/telegram
+10:11:59 PM [DEBUG] API request {"method":"post","url":"/api/auth/telegram","headers":{"Accept":"application/json, text/plain, */*"},"data":{"initData":"user=%7B%22id%22%3A335707594%2C%22first_name%22%3A%22Ilya%22%2C%22last_name%22%3A%22%22%2C%22username%22%3A%22diabobus%22%2C%22language_code%22%3A%22en%22%2C%22is_premium%22%3Atrue%2C%22allows_write_to_pm%22%3Atrue%2C%22photo_url%22%3A%22https%3A%5C%2F%5C%2Ft.me%5C%2Fi%5C%2Fuserpic%5C%2F320%5C%2FD7GBxhv79GYHCfCbGAOFFv2928vAfiR3BYWUaqo1Wmo.svg%22%7D&chat_instance=-3147423199894841732&chat_type=private&auth_date=1762031517&signature=OiQEp9ApLllb1JNPhJEfgkpWoqdgQQ1yLnZk_0kgsMZT5NFjkUqTzIRVdvLuiWo40... [591 chars total]"}}
+10:12:00 PM [DEBUG] API response {"url":"/auth/telegram","status":200,"data":{"status":true,"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzM1NzA3NTk0LCJ1c2VybmFtZSI6ImRpYWJvYnVzIiwiZmlyc3RfbmFtZSI6IklseWEiLCJsYXN0X25hbWUiOiIiLCJsYW5ndWFnZV9jb2RlIjoiZW4iLCJpc19wcmVtaXVtIjp0cnVlLCJwaG90b191cmwiOiJodHRwczovL3QubWUvaS91c2VycGljLzMyMC9EN0dCeGh2NzlHWUhDZkNiR0FPRkZ2MjkyOHZBZmlSM0JZV1VhcW8xV21vLnN2ZyIsImlhdCI6MTc2MjAzMTUyMCwiZXhwIjoxNzYyMTE3OTIwfQ.ZhhLlvtATDSpQxfuYNh2GrGaHCH4AbX4vwsF_3w-IwI","token_type":"bearer"}}
+10:12:00 PM [INFO ] TelegramProvider: token saved and header set
+10:12:00 PM [DEBUG] API request {"method":"get","url":"/api/lobby/waiting_status","headers":{"Accept":"application/json, text/plain, */*","Authorization":"Bear...-IwI"}}
+10:12:00 PM [DEBUG] API response {"url":"/lobby/waiting_status","status":200,"data":{"status":0,"game_id":-1}}
+10:12:00 PM [INFO ] SmartRedirect: no active game, redirecting to profile {"status":0,"game_id":-1}
+10:12:00 PM [DEBUG] API request {"method":"get","url":"/api/users/profile","headers":{"Accept":"application/json, text/plain, */*","Authorization":"Bear...-IwI"}}
+10:12:00 PM [INFO ] GameSocket: connecting (prod mode) namespace=/game path=/socket.io tuid=335707594
+10:12:00 PM [INFO ] GameSocket: connected ✅ {"id":"YM0J0kRvcTKYMSVqAAAr"}
+10:12:00 PM [DEBUG] GameSocket: ← online_count [{"count":1}]
+10:12:00 PM [DEBUG] API response {"url":"/users/profile","status":200,"data":{"percantage":0,"count_games":0,"value":null,"history":[]}}
+10:12:05 PM [DEBUG] GameSocket: ← online_count [{"count":1}]
+10:12:08 PM [DEBUG] API request {"method":"post","url":"/api/tonconnect/nonce","headers":{"Accept":"application/json, text/plain, */*","Authorization":"Bear...-IwI"},"data":{"session":"22d737b9-6b35-4a7d-93b3-8a09d29b5230"}}
+10:12:09 PM [DEBUG] API response {"url":"/tonconnect/nonce","status":200,"data":{"session":"22d737b9-6b35-4a7d-93b3-8a09d29b5230","nonce":"23cRQ-2kWcvMNLEDg3eWrvPHtJh1ZDwF"}}
+10:12:09 PM [INFO ] [requestProofAny] Starting {"payload":"23cRQ-2kWcvMNLEDg3eWrvPHtJh1ZDwF"}
+10:12:09 PM [INFO ] [requestProofAny] Using method 3: reconnect
+10:12:09 PM [INFO ] [requestProofAny] Was connected: true
+10:12:09 PM [INFO ] [requestProofAny] Set tonProof parameters
+10:12:09 PM [INFO ] BalanceProvider: Balance fetching disabled (no backend endpoint)
+10:12:09 PM [INFO ] [requestProofAny] Disconnected
+10:12:09 PM [INFO ] [requestProofAny] Setting up listener...
+10:12:09 PM [INFO ] [requestProofAny] Opening modal...
+10:12:09 PM [INFO ] [requestProofAny] Starting polling fallback...
+10:12:15 PM [DEBUG] GameSocket: ← online_count [{"count":1}]

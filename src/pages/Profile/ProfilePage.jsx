@@ -8,7 +8,8 @@ import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
-// TonConnect temporarily disabled: keep placeholder button
+import { TonConnectButton, useTonAddress, useTonConnectUI } from '@tonconnect/ui-react'
+// Removed one-click custom button to keep only official TonConnectButton
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -19,7 +20,37 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [walletStatus, setWalletStatus] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
-  const connectedAddress = null
+  const connectedAddress = useTonAddress()
+  const [tonConnectUI] = useTonConnectUI()
+
+  // Reset TON Connect (clear localStorage and disconnect)
+  const handleResetWallet = async () => {
+    try {
+      logger.info('ProfilePage: Resetting TON Connect...')
+      
+      // Disconnect wallet
+      if (tonConnectUI.wallet) {
+        await tonConnectUI.disconnect()
+      }
+      
+      // Clear localStorage
+      const keys = Object.keys(localStorage)
+      const tonKeys = keys.filter(k => k.includes('ton-connect') || k.includes('tonconnect'))
+      tonKeys.forEach(k => {
+        logger.info('ProfilePage: Removing localStorage key', k)
+        localStorage.removeItem(k)
+      })
+      
+      setWalletStatus('✅ Wallet reset! Reload page.')
+      logger.info('ProfilePage: Wallet reset complete')
+      
+      // Reload after 1 second
+      setTimeout(() => window.location.reload(), 1000)
+    } catch (e) {
+      logger.error('ProfilePage: Reset failed', e)
+      setWalletStatus('❌ Reset failed')
+    }
+  }
 
   // Derived data from Telegram user
   const displayName = user?.username
@@ -106,18 +137,27 @@ export default function ProfilePage() {
             {displayName}
           </div>
           {/* TON Connect address display */}
-          <div className="text-center text-neutral-700 text-xs font-mono font-normal max-w-[260px] truncate">
-            {connectedAddress || '—'}
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <button
-              type="button"
-              disabled
-              title={'Ton Connect (soon)'}
-              className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white/70 text-sm cursor-not-allowed"
-            >
-              {'Ton Connect (soon)'}
-            </button>
+          {connectedAddress && (
+            <div className="text-center text-neutral-400 text-xs font-mono font-normal max-w-[260px] truncate">
+              {connectedAddress.slice(0, 8)}...{connectedAddress.slice(-6)}
+            </div>
+          )}
+          <div className="mt-2 flex flex-col items-center gap-2">
+            {/* Официальная кнопка TON Connect; при первом подключении мы уже подготовили tonProof */}
+            <TonConnectButton />
+            {connectedAddress && (
+              <button
+                onClick={handleResetWallet}
+                className="px-3 py-1.5 text-xs text-red-400 border border-red-400/30 rounded-lg hover:bg-red-400/10 transition-colors"
+              >
+                🔄 Reset Wallet
+              </button>
+            )}
+            {walletStatus && (
+              <div className="text-xs text-center text-neutral-400 max-w-[260px]">
+                {walletStatus}
+              </div>
+            )}
           </div>
         </div>
       </section>
