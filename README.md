@@ -2,6 +2,21 @@
 
 Mobile-first React app (390×812) built with Vite and Tailwind (v4). It targets Telegram WebApp, includes a shared header and bottom nav, and several feature pages: Lobby, Create, Join, Battle, etc.
 
+## 🧭 Что здесь происходит
+
+Проект состоит из двух основных частей:
+
+- Frontend (React + Vite) — Telegram WebApp, который собирается в статические файлы и может работать через локальный dev-сервер Vite или как готовая сборка (serve на 5000 порту).
+- Game Server (Node.js + Socket.IO) — локальный realtime-сервер игры на 3001 порту. Он ходит в основной backend (FastAPI) по API_BASE.
+
+В production оба сервиса запускаются в Docker контейнерах: `frontend` (порт 5000) и `game-server` (порт 3001). В dev вы можете работать через Vite, через полу-prod (сборка + локальный game server) или полностью через Docker.
+
+## ✅ Требования
+
+- Node.js 18+ и npm
+- Docker + docker-compose (для prod варианта)
+- Cloudflare Tunnel (опционально для Telegram WebApp dev, см. `docs/cloudflare-tunnel.md`)
+
 ## 🚀 Quick Start
 
 ### Test Mode (рекомендуется для разработки)
@@ -24,16 +39,78 @@ npm run dev:twa:game
 | `npm run dev:twa:game` | **Полный стек** (фронт + туннель + game server) |
 | `npm run dev:all` | Frontend + game server (без туннеля) |
 
-📖 Подробнее: **[DEV-MODES.md](./DEV-MODES.md)**
+📖 Подробнее: см. `docs/quickstart.md` и `docs/cloudflare-tunnel.md`
 
 ---
 
 ## 📦 Deployment
 
-- **[DEPLOY.md](./DEPLOY.md)** - Полный гайд по production деплою (Docker, Nginx, SSL)
-- **[DEV-MODES.md](./DEV-MODES.md)** - Режимы разработки и отладка
+- Полный гайд по деплою: `docs/deployment.md` (Docker, Nginx, SSL)
+- Быстрый старт и режимы разработки: `docs/quickstart.md`
 
 **Production:** https://cosmopoliten.online
+
+---
+
+## 🔧 Три варианта запуска
+
+Ниже — единая сводка из трёх рабочих способов локального запуска.
+
+### 1) Dev (как есть — «всё правильно»)
+
+- Рекомендуемый «полный» dev для Telegram WebApp: туннель + фронт + локальный game server
+	```bash
+	npm install
+	npm run dev:twa:game
+	```
+- Базовый фронт без туннеля (Vite):
+	```bash
+	npm run dev  # http://localhost:5173
+	```
+
+### 2) Полу‑dev в двух терминалах (ближе к прод)
+
+Собираем фронт как статические файлы и обслуживаем их на 5000, а game server запускаем на 3001, указывая API_BASE для основного backend.
+
+- Терминал 1 (Frontend, порт 5000):
+	```bash
+	npm ci
+	npm run build
+	npx serve -s dist -l 5000
+	```
+	Примечание: если установлен глобально `serve`, можно использовать `serve -s dist -l 5000`.
+
+- Терминал 2 (Game Server, порт 3001):
+	```bash
+	cd server
+	npm ci --only=production
+	NODE_ENV=production PORT=3001 API_BASE=http://127.0.0.1:8123 npm start
+	```
+
+Теперь фронт доступен на http://localhost:5000, а realtime game server — на http://localhost:3001.
+
+### 3) Prod (Docker Compose)
+
+Выполните три шага:
+
+1) Снести старые контейнеры сервисов (включая compose‑префикс) и сироты
+```bash
+docker-compose down --remove-orphans; docker rm -fv $(docker ps -aq -f name=shispy-frontend) $(docker ps -aq -f name=shispy-game-server) 2>/dev/null || true
+```
+
+2) Пересобрать образы без кеша
+```bash
+docker-compose build --no-cache frontend game-server
+```
+
+3) Запустить заново (форс‑пересоздание и удаление сирот)
+```bash
+docker-compose up -d --force-recreate --remove-orphans frontend game-server
+```
+
+По умолчанию сервисы будут доступны:
+- Frontend: http://localhost:5000
+- Game Server: http://localhost:3001
 
 ## Stack
 
