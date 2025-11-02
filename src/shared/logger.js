@@ -2,7 +2,7 @@ const LEVELS = ['error', 'warn', 'info', 'debug']
 const _listeners = new Set()
 const _buffer = []
 const MAX_BUFFER = 200
-const MAX_STRING_LENGTH = 500 // Максимальная длина строки в логах (увеличено для отладки)
+const MAX_STRING_LENGTH = 2000 // Максимальная длина строки в логах (увеличено для initData)
 const MAX_OBJECT_DEPTH = 5 // Максимальная глубина вложенности объектов (увеличено для отладки)
 
 function getLevel() {

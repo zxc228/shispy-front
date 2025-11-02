@@ -64,6 +64,7 @@ export function TelegramProvider({ children }) {
       }
       try {
         logger.info('TelegramProvider: authenticating via /auth/telegram')
+        logger.debug('TelegramProvider: initData', initData)
         const res = await authTelegram(initData)
         if (cancelled) return
         if (res?.access_token) {

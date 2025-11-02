@@ -8,6 +8,7 @@ import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react'
 import { useTonProof } from '../../hooks/useTonProof'
+import DepositTest from './DepositTest'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -190,6 +191,9 @@ export default function ProfilePage() {
           >Open</button>
         </div>
       </section>
+
+      {/* TEST DEPOSIT */}
+      <DepositTest />
 
       {/* GAME HISTORY (from backend) */}
       <section className="w-full px-2.5">

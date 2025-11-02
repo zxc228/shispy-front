@@ -29,8 +29,24 @@ export async function initTonConnectSession() {
   }
 }
 
+// POST /tonconnect/deposit { action, amount } -> { id, validUntil, messages }
+export async function createDeposit(action = 'game', amount = 1) {
+  const apiInstance = getApiInstance()
+  const res = await apiInstance.post('/tonconnect/deposit', { action, amount })
+  return res.data
+}
+
+// POST /tonconnect/check { id, action } -> status string
+export async function checkDeposit(id, action = 'game') {
+  const apiInstance = getApiInstance()
+  const res = await apiInstance.post('/tonconnect/check', { id, action })
+  return res.data
+}
+
 export default { 
   getTonConnectNonce, 
   verifyTonConnectProof,
   initTonConnectSession,
+  createDeposit,
+  checkDeposit,
 }
