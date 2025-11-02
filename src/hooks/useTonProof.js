@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useTonConnectUI } from '@tonconnect/ui-react'
+import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react'
 import { initTonConnectSession, verifyTonConnectProof } from '../shared/api/tonconnect.api'
 import { logger } from '../shared/logger'
+
+const VERIFIED_WALLETS_KEY = 'ton_verified_wallets'
 
 /**
  * Hook для автоматической верификации TonConnect wallet с proof
@@ -12,16 +14,53 @@ import { logger } from '../shared/logger'
  */
 export function useTonProof() {
   const [tonConnectUI] = useTonConnectUI()
+  const userAddress = useTonAddress()
   const [status, setStatus] = useState('')
   const [error, setError] = useState(null)
   const [currentSession, setCurrentSession] = useState(null)
+
+  // Проверка, был ли кошелек уже верифицирован
+  const isWalletVerified = (address) => {
+    if (!address) return false
+    try {
+      const verified = JSON.parse(localStorage.getItem(VERIFIED_WALLETS_KEY) || '{}')
+      return verified[address] === true
+    } catch {
+      return false
+    }
+  }
+
+  // Сохранение статуса верификации кошелька
+  const markWalletAsVerified = (address) => {
+    if (!address) return
+    try {
+      const verified = JSON.parse(localStorage.getItem(VERIFIED_WALLETS_KEY) || '{}')
+      verified[address] = true
+      localStorage.setItem(VERIFIED_WALLETS_KEY, JSON.stringify(verified))
+    } catch (e) {
+      logger.warn('Failed to save wallet verification status:', e)
+    }
+  }
 
   // Запрос nonce и установка tonProof параметров при монтировании
   useEffect(() => {
     if (!tonConnectUI) return
 
+    // Если кошелек уже подключен и верифицирован, не запрашиваем новый nonce
+    const wallet = tonConnectUI.wallet
+    if (wallet && userAddress && isWalletVerified(userAddress)) {
+      setStatus('✓ Кошелёк подтверждён')
+      return
+    }
+
     async function setupTonProof() {
       try {
+        // Если кошелек уже подключен, но не верифицирован
+        if (wallet) {
+          setStatus('Кошелёк подключён ранее')
+          return
+        }
+
         setStatus('Получаю nonce...')
         const { session, nonce } = await initTonConnectSession()
         setCurrentSession(session)
@@ -43,7 +82,7 @@ export function useTonProof() {
     }
 
     setupTonProof()
-  }, [tonConnectUI])
+  }, [tonConnectUI, userAddress])
 
   // Автоматическая верификация при подключении кошелька
   useEffect(() => {
@@ -53,6 +92,14 @@ export function useTonProof() {
       if (!wallet) {
         setStatus('')
         setError(null)
+        return
+      }
+
+      const walletAddress = wallet.account?.address
+      
+      // Если кошелек уже верифицирован, не делаем повторную верификацию
+      if (walletAddress && isWalletVerified(walletAddress)) {
+        setStatus('✓ Кошелёк подтверждён')
         return
       }
 
@@ -96,6 +143,7 @@ export function useTonProof() {
           setStatus('✓ Кошелёк подтверждён')
           setError(null)
           setCurrentSession(null) // Очистить сессию после успеха
+          markWalletAsVerified(account.address) // Сохранить статус верификации
         } else {
           throw new Error(verifyData?.error || 'Verification failed')
         }
