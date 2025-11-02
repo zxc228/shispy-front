@@ -2,35 +2,35 @@ import { getApiInstance } from './client'
 
 // Generate a unique session ID for TON Connect flow
 function generateSessionId() {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+  return crypto.randomUUID()
 }
 
-// GET /tonconnect/nonce/{session_id} -> { nonce: string }
-export async function getTonConnectNonce(sessionId) {
+// POST /tonconnect/nonce { session } -> { session, nonce }
+export async function getTonConnectNonce(session) {
   const apiInstance = getApiInstance()
-  const res = await apiInstance.get(`/tonconnect/nonce/${sessionId}`)
+  const res = await apiInstance.post('/tonconnect/nonce', { session })
   return res.data
 }
 
-// POST /tonconnect/verify { publicKey, address, signature, payload, session } -> { ok: boolean, wallet?: string, error?: string }
-export async function verifyTonConnectSignature(data) {
+// POST /tonconnect/verify { session, publicKey, address, proof } -> { status: boolean, address?: string, error?: string }
+export async function verifyTonConnectProof(data) {
   const apiInstance = getApiInstance()
   const res = await apiInstance.post('/tonconnect/verify', data)
   return res.data
 }
 
-// High-level function: get nonce for new connection attempt
+// High-level function: initialize new TON Connect session with nonce
 export async function initTonConnectSession() {
-  const sessionId = generateSessionId()
-  const nonceData = await getTonConnectNonce(sessionId)
+  const session = generateSessionId()
+  const nonceData = await getTonConnectNonce(session)
   return {
-    sessionId,
+    session,
     nonce: nonceData.nonce,
   }
 }
 
 export default { 
   getTonConnectNonce, 
-  verifyTonConnectSignature,
+  verifyTonConnectProof,
   initTonConnectSession,
 }
