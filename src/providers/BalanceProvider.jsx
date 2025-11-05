@@ -33,9 +33,20 @@ export function BalanceProvider({ children }) {
     await fetchBalance()
   }, [fetchBalance])
 
-  // Initial fetch on mount
+  // Initial fetch on mount if token exists
   useEffect(() => {
     if (getToken()) fetchBalance()
+  }, [fetchBalance])
+
+  // Listen for auth events from TelegramProvider
+  useEffect(() => {
+    const handleAuthComplete = () => {
+      logger.info('BalanceProvider: Auth complete event received, fetching balance')
+      fetchBalance()
+    }
+    
+    window.addEventListener('auth:complete', handleAuthComplete)
+    return () => window.removeEventListener('auth:complete', handleAuthComplete)
   }, [fetchBalance])
 
   // Refresh on window focus

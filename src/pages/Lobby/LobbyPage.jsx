@@ -37,7 +37,7 @@ export default function LobbyPage() {
   const loadQueue = async (showLoadingState = true) => {
     try {
       if (showLoadingState) setLoading(true)
-      const list = await withLoading(() => getQueue())
+      const list = showLoadingState ? await withLoading(() => getQueue()) : await getQueue()
       // Map API to Room shape
       const mapped = Array.isArray(list) ? list.map((item) => {
         const betArr = Array.isArray(item?.bet) ? item.bet : []
