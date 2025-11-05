@@ -7,4 +7,11 @@ export async function getProfile() {
   return res.data
 }
 
-export default { getProfile }
+// GET /users/balance -> { amount: number }
+export async function getBalance() {
+  const apiInstance = getApiInstance()
+  const res = await apiInstance.get('/users/balance')
+  return res.data
+}
+
+export default { getProfile, getBalance }
