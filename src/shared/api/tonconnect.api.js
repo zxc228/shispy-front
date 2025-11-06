@@ -1,4 +1,5 @@
 import { getApiInstance } from './client'
+import { logger } from '../logger'
 
 // Generate a unique session ID for TON Connect flow
 function generateSessionId() {
@@ -14,8 +15,10 @@ export async function getTonConnectNonce(session) {
 
 // POST /tonconnect/verify { session, publicKey, address, proof } -> { status: boolean, address?: string, error?: string }
 export async function verifyTonConnectProof(data) {
+  logger.info('verifyTonConnectProof: Sending data to backend:', JSON.stringify(data, null, 2))
   const apiInstance = getApiInstance()
   const res = await apiInstance.post('/tonconnect/verify', data)
+  logger.info('verifyTonConnectProof: Response from backend:', res.data)
   return res.data
 }
 
@@ -32,7 +35,9 @@ export async function initTonConnectSession() {
 // POST /tonconnect/deposit { action, amount } -> { id, validUntil, messages }
 export async function createDeposit(action = 'game', amount = 1) {
   const apiInstance = getApiInstance()
+  logger.info('createDeposit: Request params', { action, amount, type: typeof amount })
   const res = await apiInstance.post('/tonconnect/deposit', { action, amount })
+  logger.info('createDeposit: Response', res.data)
   return res.data
 }
 

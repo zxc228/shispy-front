@@ -127,7 +127,14 @@ export function useTonProof() {
           ? proof.domain 
           : proof.domain?.value
 
-        const verifyData = await verifyTonConnectProof({
+        logger.info('useTonProof: Preparing verification data...')
+        logger.info('useTonProof: currentSession =', currentSession)
+        logger.info('useTonProof: account.publicKey =', account.publicKey)
+        logger.info('useTonProof: account.address =', account.address)
+        logger.info('useTonProof: proof =', JSON.stringify(proof, null, 2))
+        logger.info('useTonProof: domainStr =', domainStr)
+
+        const dataToVerify = {
           session: currentSession,
           publicKey: account.publicKey,
           address: account.address,
@@ -137,7 +144,11 @@ export function useTonProof() {
             domain: domainStr,
             timestamp: Number(proof.timestamp)
           }
-        })
+        }
+
+        logger.info('useTonProof: Full data object to send:', JSON.stringify(dataToVerify, null, 2))
+
+        const verifyData = await verifyTonConnectProof(dataToVerify)
 
         if (verifyData?.status) {
           setStatus('✓ Кошелёк подтверждён')
@@ -149,9 +160,18 @@ export function useTonProof() {
         }
       } catch (e) {
         const errorMsg = e?.message || String(e)
-        setStatus(`Ошибка: ${errorMsg}`)
+        setStatus(`❌ Верификация не пройдена: ${errorMsg}`)
         setError(e)
         logger.error('Wallet verification error:', e)
+        
+        // Отключаем кошелёк, если верификация не прошла
+        try {
+          logger.warn('Disconnecting wallet due to verification failure')
+          await tonConnectUI.disconnect()
+          setStatus('❌ Кошелёк отключён. Верификация не пройдена.')
+        } catch (disconnectError) {
+          logger.error('Error disconnecting wallet:', disconnectError)
+        }
       }
     })
 
