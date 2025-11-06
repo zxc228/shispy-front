@@ -7,10 +7,12 @@ import WinIcon from '../../components/icons/WinIcon.png'
 import DefeatIcon from '../../components/icons/DefeatIcon.png'
 import BattleCell from './BattleCell'
 import Confetti from '../../components/animations/Confetti'
+import TgsSticker from '../../components/common/TgsSticker'
 // REST battle APIs removed from this component in realtime mode
 import { logger } from '../../shared/logger'
 import { useTelegram } from '../../providers/TelegramProvider'
 import useBattleSocket from '../../hooks/useBattleSocket'
+import { transformGiftsData } from '../../shared/utils/gifts'
 
 /** @typedef {"idle"|"selected"|"hit"|"miss"|"disabled"} CellState */
 /** @typedef {"selectShip"|"selectShipSelected"|"selectShipWaiting"|"myTurn"|"myTurnSelected"|"myTurnFiring"|"myTurnMiss"|"enemyTurn"|"myTurnHit"|"win"} BattleMode */
@@ -37,18 +39,6 @@ export default function BattlePage() {
   const [tossInfo, setTossInfo] = useState(null)
   const [tossShown, setTossShown] = useState(false) // Track if toss was already shown
   const [myBet, setMyBet] = useState(null) // Store player's bet for showing on loss
-
-  // Normalize gift photos: ensure http/data prefix for base64 payloads
-  const normalizeGifts = (arr) => {
-    if (!Array.isArray(arr)) return []
-    return arr.map((g) => {
-      const raw = g?.photo || ''
-      const photo = typeof raw === 'string' && raw.length > 0
-        ? (raw.startsWith('http') || raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`)
-        : ''
-      return { ...g, photo }
-    })
-  }
 
   // Save active game ID for reconnection
   useEffect(() => {
@@ -221,7 +211,7 @@ export default function BattlePage() {
       // finish will also trigger game_over; set mode to win if I'm winner
       if (mr.winner === battle.role) {
         // Parse rewards from move_result
-        const rewards = normalizeGifts(mr.rewards || [])
+        const rewards = transformGiftsData(mr.rewards || [])
         const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
         setSheet({ variant: 'win', amount: Number(total.toFixed(2)), gifts: rewards })
         setShowConfetti(true) // Show confetti on win!
@@ -276,7 +266,7 @@ export default function BattlePage() {
     
     if (win) {
       // Winner: show rewards from server
-      const rewards = normalizeGifts(battle.gameOver.rewards || [])
+      const rewards = transformGiftsData(battle.gameOver.rewards || [])
       const total = rewards.reduce((sum, g) => sum + Number(g?.value || 0), 0)
       setSheet({ 
         variant: 'win', 
@@ -287,6 +277,7 @@ export default function BattlePage() {
       setMode('win')
     } else {
       // Loser: show what was bet and lost
+      // myBet.gifts are already transformed (contain tgsUrl) from CreatePage/JoinPage
       const lostGifts = myBet?.gifts || []
       const lostTotal = myBet?.total || 0
       setSheet({
@@ -525,8 +516,15 @@ export default function BattlePage() {
                       ].join(' ')}
                       style={sheet.variant === 'win' ? { animationDelay: `${i * 0.1}s` } : {}}
                     >
-                      {g?.photo ? (
-                        <img src={g.photo} alt={g?.slug || 'Gift'} className="w-full h-full object-cover" />
+                      {g?.tgsUrl ? (
+                        <TgsSticker
+                          src={g.tgsUrl}
+                          width={64}
+                          height={64}
+                          loop={true}
+                          autoplay={true}
+                          className="opacity-90"
+                        />
                       ) : (
                         <img src={EmptyGiftSvg} alt="Gift" className="w-10 h-10 opacity-80" />
                       )}
