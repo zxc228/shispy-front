@@ -22,4 +22,21 @@ export async function getTreasuryGifts() {
   return { gwc: 0, gifts: [] }
 }
 
-export default { getTreasuryGifts }
+// POST /treasury/withdrawal
+// Request: { gids: string[] }
+// Response: { status: boolean }
+export async function postWithdrawal(gids, paymentId = null) {
+  const apiInstance = getApiInstance()
+  const config = {}
+  
+  if (paymentId) {
+    config.headers = {
+      'Payment-Id': paymentId
+    }
+  }
+  
+  const res = await apiInstance.post('/treasury/withdrawal', { gids }, config)
+  return res.data
+}
+
+export default { getTreasuryGifts, postWithdrawal }

@@ -4,6 +4,7 @@ import { useTelegram } from '../../providers/TelegramProvider'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
+import { getReferralPayments } from '../../shared/api/referrals.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react'
@@ -14,9 +15,11 @@ export default function ProfilePage() {
   const { user, authDone } = useTelegram()
   const { withLoading } = useLoading()
   const [profile, setProfile] = useState(null)
+  const [referrals, setReferrals] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('new') // new | last | wins | lose
+  const [showReferralModal, setShowReferralModal] = useState(false)
   
   // TonConnect integration
   const userAddressFriendly = useTonAddress()
@@ -35,13 +38,20 @@ export default function ProfilePage() {
     async function run() {
       if (!authDone) return
       try {
-  setLoading(true)
-  const prof = await withLoading(() => getProfile())
+        setLoading(true)
+        const [prof, refs] = await Promise.all([
+          withLoading(() => getProfile()),
+          getReferralPayments().catch(e => {
+            logger.warn('ProfilePage: getReferralPayments error', e)
+            return { persons: 0, amount: 0 }
+          })
+        ])
         if (cancelled) return
         setProfile(prof)
+        setReferrals(refs)
       } catch (e) {
         if (cancelled) return
-  setError('Failed to load profile')
+        setError('Failed to load profile')
         logger.error('ProfilePage: getProfile error', e)
       } finally {
         if (!cancelled) setLoading(false)
@@ -107,18 +117,10 @@ export default function ProfilePage() {
           <div className="w-full text-center text-neutral-50 text-base font-normal font-sans">
             {displayName}
           </div>
-          {/* TON Connect address display */}
-          <div className="text-center text-neutral-700 text-xs font-mono font-normal max-w-[260px] truncate">
-            {connectedAddress || '—'}
-          </div>
+          {/* Wallet connect button */}
           <div className="mt-2 flex items-center gap-2">
-            {/* Кнопка подключения/меню кошелька с автоматическим proof */}
-            <TonConnectButton className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white text-sm" />
+            <TonConnectButton />
           </div>
-          {/* Статус под кнопкой */}
-          {walletStatus && (
-            <div className="mt-2 text-xs text-white/70">{walletStatus}</div>
-          )}
         </div>
       </section>
 
@@ -145,7 +147,49 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* REFERRAL — removed */}
+      {/* REFERRAL SECTION */}
+      <section className="w-full px-2.5">
+        <div className="p-3 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">👥</span>
+              <div className="flex flex-col">
+                <div className="text-neutral-50 text-base font-semibold font-sans">Referral Program</div>
+                <div className="text-white/60 text-xs">Invite friends and earn</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowReferralModal(true)}
+              className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-white text-sm hover:bg-neutral-700 active:scale-95 transition-all"
+            >
+              Invite
+            </button>
+          </div>
+          
+          {/* Referral Stats */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 bg-black rounded-xl border border-neutral-700/60 flex flex-col gap-1">
+              <div className="text-neutral-50 text-lg font-medium font-sans">{referrals?.persons ?? 0}</div>
+              <div className="text-white/50 text-xs font-normal font-sans">Friends</div>
+            </div>
+            <div className="p-2 bg-black rounded-xl border border-neutral-700/60 flex flex-col gap-1">
+              <div className="inline-flex items-center gap-1.5">
+                <div className="text-neutral-50 text-lg font-medium font-sans">{Number(referrals?.amount ?? 0).toFixed(2)}</div>
+                <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain translate-y-[0.5px]" />
+              </div>
+              <div className="text-white/50 text-xs font-normal font-sans">Earned</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* REFERRAL MODAL */}
+      {showReferralModal && (
+        <ReferralModal
+          userId={user?.id}
+          onClose={() => setShowReferralModal(false)}
+        />
+      )}
 
       {/* PROMO CODE — временно скрыто */}
       {false && (
@@ -268,6 +312,125 @@ export default function ProfilePage() {
   </section>
 
       <div className="h-2" />
+    </div>
+  )
+}
+
+/* ========== Referral Modal ========== */
+
+function ReferralModal({ userId, onClose }) {
+  const [copied, setCopied] = useState(false)
+  
+  // Generate referral link
+  const botUsername = 'shipsy_bot' // Replace with your bot username
+  const referralLink = userId 
+    ? `https://t.me/${botUsername}?start=ref_${userId}`
+    : `https://t.me/${botUsername}`
+  
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(referralLink)
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = referralLink
+        textArea.style.position = 'fixed'
+        textArea.style.opacity = '0'
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+      
+      setCopied(true)
+      
+      // Haptic feedback
+      if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+      }
+      
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+  
+  const handleShare = () => {
+    const text = `🎮 Join me on Shipsy - the ultimate battle game!\n\n💰 Play, compete, and win TON rewards!\n\n${referralLink}`
+    
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`)
+    } else {
+      // Fallback
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`, '_blank')
+    }
+    onClose()
+  }
+  
+  return (
+    <div 
+      className="fixed inset-0 z-50 grid place-items-center bg-black/70 animate-[fadeIn_0.2s_ease-out] px-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-neutral-900 rounded-2xl border border-neutral-700 max-w-sm w-full p-6 space-y-4 animate-[slideUp_0.3s_ease-out]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Icon */}
+        <div className="w-16 h-16 mx-auto rounded-full bg-neutral-800 border border-neutral-700 grid place-items-center">
+          <span className="text-3xl">👥</span>
+        </div>
+        
+        {/* Title */}
+        <h2 className="text-xl font-bold text-white text-center">
+          Invite Friends
+        </h2>
+        
+        {/* Description */}
+        <p className="text-neutral-300 text-sm text-center">
+          Share your link and earn rewards
+        </p>
+        
+        {/* Link Display */}
+        <div className="space-y-2">
+          <div className="p-3 bg-neutral-800 rounded-xl border border-neutral-700 text-white text-xs font-mono break-all">
+            {referralLink}
+          </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={handleCopy}
+            className={`flex-1 h-12 rounded-xl font-semibold transition-all active:scale-95 ${
+              copied 
+                ? 'bg-green-600 border border-green-500 text-white' 
+                : 'bg-neutral-800 border border-neutral-700 text-white hover:bg-neutral-700'
+            }`}
+          >
+            {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex-1 h-12 rounded-xl 
+                       bg-gradient-to-b from-orange-400 to-amber-700 
+                       shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)]
+                       text-white font-semibold
+                       active:scale-95 active:translate-y-[0.5px]
+                       transition-all"
+          >
+            Share
+          </button>
+        </div>
+        
+        <button
+          onClick={onClose}
+          className="w-full text-neutral-400 text-sm hover:text-neutral-300 transition-colors"
+        >
+          Close
+        </button>
+      </div>
     </div>
   )
 }
