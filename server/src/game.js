@@ -272,14 +272,19 @@ class Game {
         const aPlaced = this.players.a.secret !== null
         const bPlaced = this.players.b.secret !== null
         
+        console.log(`[Game ${this.gameId}] Placing timer expired - aPlaced: ${aPlaced}, bPlaced: ${bPlaced}`)
+        
         if (!aPlaced && !bPlaced) {
           // Both failed to place - call cancel API
+          console.log(`[Game ${this.gameId}] Both players failed to place - cancelling game and refunding bets`)
           this.apiCancel()
             .then(() => {
+              console.log(`[Game ${this.gameId}] apiCancel success - finishing game with placing_timeout_both`)
               this.finish(null, { reason: 'placing_timeout_both' })
             })
-            .catch(() => {
+            .catch((error) => {
               // Still finish even if API call fails
+              console.error(`[Game ${this.gameId}] apiCancel failed - finishing anyway`, error.message)
               this.finish(null, { reason: 'placing_timeout_both' })
             })
         } else if (!aPlaced) {
@@ -470,13 +475,24 @@ class Game {
   
   async apiCancel() {
     // Cancel game when both players failed to place
+    console.log(`[Game ${this.gameId}] apiCancel: Cancelling game due to timeout/both players inactive`)
+    
     // Use first available token (prefer player A)
     const role = this.players.a.token ? 'a' : (this.players.b.token ? 'b' : null)
     if (!role) {
-      console.warn('apiCancel: no token available for cancel request')
+      console.warn(`[Game ${this.gameId}] apiCancel: no token available for cancel request`)
       return
     }
+    
     const api = this.axiosFor(role)
-    await api.post('/lobby/cancel_game', { game_id: Number(this.gameId) })
+    console.log(`[Game ${this.gameId}] apiCancel: Sending POST /lobby/cancel_game with game_id=${this.gameId}`)
+    
+    try {
+      const response = await api.post('/lobby/cancel_game', { game_id: Number(this.gameId) })
+      console.log(`[Game ${this.gameId}] apiCancel: Success - bets refunded`, response.data)
+    } catch (error) {
+      console.error(`[Game ${this.gameId}] apiCancel: Failed to cancel game`, error.message)
+      throw error
+    }
   }
 }

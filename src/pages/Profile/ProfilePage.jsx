@@ -322,9 +322,9 @@ function ReferralModal({ userId, onClose }) {
   const [copied, setCopied] = useState(false)
   
   // Generate referral link
-  const botUsername = 'shipsy_bot' // Replace with your bot username
+  const botUsername = import.meta.env.VITE_BOT_USERNAME || 'shipsy_bot'
   const referralLink = userId 
-    ? `https://t.me/${botUsername}?start=ref_${userId}`
+    ? `https://t.me/${botUsername}?start=${userId}`
     : `https://t.me/${botUsername}`
   
   const handleCopy = async () => {

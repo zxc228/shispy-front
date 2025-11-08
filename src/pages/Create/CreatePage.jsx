@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import TonSvg from '../../components/icons/TonIcon.svg'
 import { getGifts, createBattle } from '../../shared/api/lobby.api'
 import { logger } from '../../shared/logger'
@@ -217,8 +216,8 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
       onClick={onToggle}
       className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden transition-all duration-200 ${selected ? 'scale-105' : 'hover:scale-105 active:scale-95'}`}
     >
-      {treasure?.tgsUrl ? (
-        <div className="w-full h-full grid place-items-center p-2">
+      <div className="w-full h-full grid place-items-center p-2">
+        {treasure?.tgsUrl ? (
           <TgsSticker
             src={treasure.tgsUrl}
             width={60}
@@ -227,12 +226,10 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
             autoplay={true}
             className="opacity-90"
           />
-        </div>
-      ) : (
-        <div className="w-full h-full bg-neutral-700 grid place-items-center p-2">
-          <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
-        </div>
-      )}
+        ) : (
+          <span className="text-4xl opacity-60">⏳</span>
+        )}
+      </div>
 
       {/* выбранное состояние — как в dev-mode: градиентный подсвет + рамка 2px */}
       {selected && (

@@ -117,7 +117,7 @@ export default function TgsSticker({
         style={{ width: `${width}px`, height: `${height}px` }}
         title={`Error loading TGS: ${error}`}
       >
-        <div className="text-2xl opacity-50">❌</div>
+        <div className="text-2xl opacity-60">⏳</div>
       </div>
     )
   }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import EmptyGiftSvg from "../../components/icons/EmptyGift.svg";
 import TonSvg from "../../components/icons/TonIcon.svg";
 import { getTreasuryGifts, postWithdrawal } from "../../shared/api/treasury.api";
 import TgsSticker from "../../components/common/TgsSticker";
@@ -24,9 +23,11 @@ export default function TreasurePage() {
   
   const { refresh: refreshBalance } = useBalance();
 
-  const loadGifts = async () => {
+  const loadGifts = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const res = await getTreasuryGifts();
       
       // Debug: log raw response
@@ -47,20 +48,55 @@ export default function TreasurePage() {
       console.log('🎁 Transformed gifts:', transformedGifts);
       setMyItems(transformedGifts);
     } catch (e) {
-      setError("Не удалось загрузить подарки");
+      if (showLoading) {
+        setError("Не удалось загрузить подарки");
+      }
       console.error('Failed to load treasury gifts:', e);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
+  // Initial load (with loading state)
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      await loadGifts();
+      await loadGifts(true);
     }
     run();
     return () => { cancelled = true };
+  }, []);
+
+  // Auto-refresh on window focus (silent)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadGifts(false);
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadGifts(false);
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Polling every 10 seconds (silent background refresh)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadGifts(false);
+    }, 10000); // 10 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   // 👉 магазинные предметы (одинаковые карточки с ценником)
@@ -108,10 +144,10 @@ export default function TreasurePage() {
       setShowWithdrawModal(false);
       setSelectedGids([]);
       
-      // Refresh balance and gifts
+      // Refresh balance and gifts (with loading state)
       await Promise.all([
         refreshBalance(true),
-        loadGifts()
+        loadGifts(false)
       ]);
       
       // Show success feedback
@@ -131,7 +167,7 @@ export default function TreasurePage() {
   };
 
   return (
-    <main className="px-2.5 pt-2 pb-[138px]">
+    <main className="px-2.5 pt-2 pb-[calc(184px+env(safe-area-inset-bottom))]">
       {/* Вкладки */}
       <Tabs active={tab} onChange={(t) => { setTab(t); setSelectedStoreId(null); setSelectedGids([]); }} />
 
@@ -146,28 +182,33 @@ export default function TreasurePage() {
           </Grid3>
         </div>
       ) : tab === "my" ? (
-        <div className="animate-[fadeIn_0.3s_ease-out]">
+        <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
           {/* Показываем empty state если нет подарков */}
           {myItems.length === 0 ? (
             <EmptyInventory />
           ) : (
-            <Grid3>
-              {/* Add new Treasure как первая карточка */}
-              <AddNewTreasureCardInGrid onClick={() => setShowAddInstructionModal(true)} />
-              {/* Остальные подарки */}
-              {myItems.map((it) => (
-                <MyTreasureCard 
-                  key={it.id} 
-                  title={it.slug} 
-                  tgsUrl={it.tgsUrl} 
-                  value={it.value}
-                  slug={it.slug}
-                  gid={it.gid}
-                  selected={selectedGids.includes(it.gid)}
-                  onToggle={() => toggleGiftSelection(it.gid)}
-                />
-              ))}
-            </Grid3>
+            <>
+              <h2 className="px-1 text-xl font-medium leading-none text-neutral-50">
+                My Treasures
+              </h2>
+              <Grid3>
+                {/* Add new Treasure как первая карточка */}
+                <AddNewTreasureCardInGrid onClick={() => setShowAddInstructionModal(true)} />
+                {/* Остальные подарки */}
+                {myItems.map((it) => (
+                  <MyTreasureCard 
+                    key={it.id} 
+                    title={it.slug} 
+                    tgsUrl={it.tgsUrl} 
+                    value={it.value}
+                    slug={it.slug}
+                    gid={it.gid}
+                    selected={selectedGids.includes(it.gid)}
+                    onToggle={() => toggleGiftSelection(it.gid)}
+                  />
+                ))}
+              </Grid3>
+            </>
           )}
         </div>
       ) : (
@@ -236,86 +277,72 @@ function Tabs({ active, onChange }) {
 }
 
 function AddNewTreasureCardInGrid({ onClick }) {
+  const baseSize = 'w-24 h-28';
+  
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="rounded-[10px] p-[1px] bg-neutral-700/50 hover:bg-neutral-600/50 transition-colors active:scale-95"
+      className={`${baseSize} relative bg-black rounded-[10px] outline outline-1 outline-offset-[-1px] outline-orange-400 overflow-hidden active:scale-95 transition-transform hover:scale-105`}
     >
-      <div
-        className="relative rounded-[10px] min-h-32 bg-neutral-800/30 border border-dashed border-neutral-600
-                   hover:border-neutral-500
-                   flex flex-col items-center justify-center px-2 py-3 transition-colors cursor-pointer"
-      >
-        {/* Иконка плюса */}
-        <div className="w-10 h-10 rounded-full bg-neutral-700/50 grid place-items-center">
-          <span className="text-2xl text-neutral-400">+</span>
-        </div>
-        <span className="text-xs font-medium text-neutral-400 text-center mt-2">
-          Add new
-        </span>
-      </div>
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-orange-400 text-xs font-medium text-center leading-tight px-2">
+        Add new<br/>Treasure
+      </span>
     </button>
   );
 }
 
 function Grid3({ children }) {
-  return <div className="grid grid-cols-3 gap-1">{children}</div>;
+  return <div className="grid grid-cols-3 gap-2 place-items-center">{children}</div>;
 }
 
 /* --------- Cards --------- */
 
-// Inventory card with TGS sticker support
+// Inventory card with TGS sticker support (в стиле Create/Join)
 function MyTreasureCard({ title, tgsUrl, value, slug, gid, selected, onToggle }) {
+  const baseSize = 'w-24 h-28';
+  
   return (
     <button
+      type="button"
+      aria-pressed={selected}
       onClick={onToggle}
-      className={[
-        "rounded-[10px] p-[1px] transition-all active:scale-95",
-        selected 
-          ? "bg-[linear-gradient(135deg,#f59e0b,#ef4444)] shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
-          : "bg-[linear-gradient(135deg,#f59e0b,#ef4444)]"
-      ].join(" ")}
+      className={`relative ${baseSize} rounded-[10px] border border-zinc-500 overflow-hidden transition-all duration-200 ${
+        selected ? 'scale-105' : 'hover:scale-105 active:scale-95'
+      }`}
     >
-      <div className={[
-        "relative rounded-[10px] min-h-32 border flex flex-col items-center justify-center px-2 py-3",
-        selected 
-          ? "bg-neutral-800/50 border-orange-400/50" 
-          : "bg-neutral-800/30 border-neutral-700"
-      ].join(" ")}>
-        {/* Selection indicator */}
-        {selected && (
-          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-orange-400 border-2 border-white grid place-items-center">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none" className="text-white">
-              <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        )}
-        
-        {/* TGS Sticker Animation */}
+      {/* TGS Sticker or loading placeholder */}
+      <div className="w-full h-full grid place-items-center p-2">
         {tgsUrl ? (
           <TgsSticker
             src={tgsUrl}
-            width={40}
-            height={40}
+            width={60}
+            height={60}
             loop={true}
             autoplay={true}
-            className="opacity-80"
+            className="opacity-90"
           />
         ) : (
-          <img
-            src={EmptyGiftSvg}
-            alt="Treasure"
-            className="w-10 h-10 opacity-80 object-contain"
-          />
+          <span className="text-4xl opacity-60">⏳</span>
         )}
-        {/* Price display */}
-        <div className="mt-2 text-base font-semibold text-white">
-          {Number(value ?? 0).toFixed(2)}
+      </div>
+
+      {/* Price badge (bottom) */}
+      <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-1">
+        <div className="inline-flex items-center gap-1">
+          <span className="text-white text-xs font-semibold">{Number(value ?? 0).toFixed(2)}</span>
+          <img src={TonSvg} alt="TON" className="w-3 h-3 object-contain" />
         </div>
-        {/* GID badge */}
-        <div className="absolute bottom-1 left-1 text-[9px] px-1.5 py-0.5 rounded bg-neutral-900/60 text-neutral-400 font-mono">
-          {slug || 'N/A'}
-        </div>
+      </div>
+
+      {/* Selected state - градиентный подсвет + рамка */}
+      {selected && (
+        <span className="absolute inset-0 rounded-[10px] pointer-events-none bg-orange-400/25 shadow-[0_0_25px_0_rgba(200,109,55,0.50)] border-2 border-orange-400" />
+      )}
+
+      {/* Slug badge (top-left, smaller) */}
+      <div className="absolute top-1 left-1 text-[8px] px-1 py-0.5 rounded bg-black/70 text-neutral-400 font-mono">
+        {slug || 'N/A'}
       </div>
     </button>
   );
@@ -341,7 +368,7 @@ function StoreCard({
     >
       {/* Контент карточки */}
       <div className="absolute inset-0 grid place-items-center">
-        <img src={EmptyGiftSvg} alt="Treasure placeholder" className="w-10 h-10 opacity-80" />
+        <span className="text-4xl opacity-60">⏳</span>
         <p className="sr-only">{title}</p>
       </div>
 
@@ -428,25 +455,36 @@ function BuyBar({
 
 function WithdrawBar({ count, value, onClick }) {
   return (
-    <div className="fixed left-0 right-0 bottom-[72px] px-2.5 z-10">
-      <button
-        onClick={onClick}
-        className="mx-auto max-w-md w-full h-14 px-4 rounded-xl 
-                   bg-gradient-to-b from-orange-400 to-amber-700 
-                   shadow-[inset_0_-1px_0_0_rgba(230,141,74,1),0_4px_20px_rgba(245,158,11,0.3)]
-                   text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)]
-                   focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60
-                   active:translate-y-[0.5px] active:scale-[0.98]
-                   transition-transform flex items-center justify-between"
-      >
-        <span className="flex items-center gap-2">
-          <span className="text-base">Withdraw {count} gift{count > 1 ? 's' : ''}</span>
-        </span>
-        <span className="flex items-center gap-1.5 text-lg font-bold">
-          {value.toFixed(2)}
-          <img src={TonSvg} alt="TON" className="w-5 h-5 object-contain" />
-        </span>
-      </button>
+    <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
+      <div className="mx-auto max-w-[390px] relative">
+        <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <div className="text-neutral-700 text-sm font-medium">Selected:</div>
+            <div className="inline-flex items-center gap-2">
+              <div className="text-neutral-50 text-lg font-medium">
+                {count} {count === 1 ? 'gift' : 'gifts'}
+              </div>
+              <div className="h-7 px-2 bg-black rounded-xl inline-flex items-center gap-1.5 shrink-0">
+                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
+                <span className="text-white text-base font-bold">
+                  {value.toFixed(2)} TON
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-1.5 relative">
+            <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
+            <button
+              type="button"
+              onClick={onClick}
+              className="w-full h-11 px-4 py-2.5 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 active:translate-y-[0.5px] transition-transform duration-150"
+            >
+              Send to Profile
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -459,30 +497,39 @@ function WithdrawModal({ count, value, loading, onConfirm, onCancel }) {
       <div className="bg-neutral-900 rounded-2xl border border-neutral-700 max-w-sm w-full p-6 space-y-4 animate-[slideUp_0.3s_ease-out]">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-orange-400 to-amber-700 grid place-items-center">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-white">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" fillOpacity="0.2"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <span className="text-3xl">🎁</span>
         </div>
         
         {/* Title */}
         <h2 className="text-xl font-bold text-white text-center">
-          Confirm Withdrawal
+          Send Gifts to Profile
         </h2>
         
         {/* Description */}
-        <div className="space-y-2 text-center">
+        <div className="space-y-3 text-center">
           <p className="text-neutral-300">
-            You are about to withdraw <span className="font-semibold text-white">{count} gift{count > 1 ? 's' : ''}</span>
+            Send <span className="font-semibold text-white">{count} gift{count > 1 ? 's' : ''}</span> to your Telegram profile
           </p>
-          <div className="flex items-center justify-center gap-2 text-2xl font-bold text-orange-400">
-            {value.toFixed(2)}
-            <img src={TonSvg} alt="TON" className="w-6 h-6 object-contain" />
+          
+          {/* Gift value display */}
+          <div className="p-3 bg-neutral-800/50 rounded-xl border border-neutral-700/50">
+            <div className="text-neutral-400 text-xs mb-1">Total gift value</div>
+            <div className="flex items-center justify-center gap-2 text-xl font-bold text-white">
+              {value.toFixed(2)}
+              <img src={TonSvg} alt="TON" className="w-5 h-5 object-contain" />
+            </div>
           </div>
-          <p className="text-sm text-neutral-400">
-            The amount will be added to your balance
-          </p>
+          
+          {/* Commission info */}
+          <div className="text-sm text-neutral-400 space-y-1">
+            <div className="flex items-center justify-center gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-orange-400">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 16V12M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <span>Commission will be deducted from your balance</span>
+            </div>
+          </div>
         </div>
         
         {/* Buttons */}
@@ -515,10 +562,10 @@ function WithdrawModal({ count, value, loading, onConfirm, onCancel }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                 </svg>
-                <span>Processing...</span>
+                <span>Sending...</span>
               </>
             ) : (
-              'Confirm'
+              'Send to Profile'
             )}
           </button>
         </div>
