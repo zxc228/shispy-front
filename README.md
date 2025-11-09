@@ -95,17 +95,21 @@ npm run dev:twa:game
 
 1) Снести старые контейнеры сервисов (включая compose‑префикс) и сироты
 ```bash
-docker-compose down --remove-orphans; docker rm -fv $(docker ps -aq -f name=shispy-frontend) $(docker ps -aq -f name=shispy-game-server) 2>/dev/null || true
+sudo docker compose down --remove-orphans \
+  && sudo docker rm -fv $(sudo docker ps -aq -f name=shispy-frontend) $(sudo docker ps -aq -f name=shispy-game-server) 2>/dev/null || true
+
 ```
 
 2) Пересобрать образы без кеша
 ```bash
-docker-compose build --no-cache frontend game-server
+sudo docker compose build --no-cache frontend game-server
+
 ```
 
 3) Запустить заново (форс‑пересоздание и удаление сирот)
 ```bash
-docker-compose up -d --force-recreate --remove-orphans frontend game-server
+sudo docker compose up -d --force-recreate --remove-orphans frontend game-server
+
 ```
 
 По умолчанию сервисы будут доступны:

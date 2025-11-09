@@ -451,105 +451,112 @@ export default function BattlePage() {
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { navigate('/lobby') }} />
           
           {/* Victory/Defeat Icon - centered above the sheet */}
-          {sheet.amount > 0 && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ paddingBottom: '30vh' }}>
-              <img 
-                src={sheet.variant === 'win' ? WinIcon : DefeatIcon} 
-                alt={sheet.variant === 'win' ? 'Victory' : 'Defeat'}
-                className="object-contain animate-[zoomIn_0.6s_ease-out]"
-                style={{
-                  width: '512px',
-                  height: 'auto',
-                  maxWidth: '90vw',
-                  filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8))',
-                  animation: 'zoomIn 0.6s ease-out, float 3s ease-in-out infinite'
-                }}
-              />
-            </div>
-          )}
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ paddingBottom: '30vh' }}>
+            <img 
+              src={sheet.variant === 'win' ? WinIcon : DefeatIcon} 
+              alt={sheet.variant === 'win' ? 'Victory' : 'Defeat'}
+              className="object-contain animate-[zoomIn_0.6s_ease-out]"
+              style={{
+                width: '768px',
+                height: 'auto',
+                maxWidth: '90vw',
+                filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8))',
+                animation: 'zoomIn 0.6s ease-out, float 3s ease-in-out infinite'
+              }}
+            />
+          </div>
           
-          <div className="fixed left-0 right-0 bottom-0 z-50">
-            <div className="mx-auto max-w-[390px] bg-black rounded-t-2xl outline outline-1 outline-neutral-700 p-3 flex flex-col" style={{ height: '52vh' }}>
-              <div className="flex items-center justify-between">
-                <div className={[
-                  sheet.variant === 'lose' && sheet.amount === 0 ? 'text-neutral-400' : (sheet.variant === 'lose' ? 'text-red-400' : 'text-white'), 
-                  'text-base font-semibold'
-                ].join(' ')}>
-                  {sheet.variant === 'lose' && sheet.amount === 0 ? 'Game cancelled' : (sheet.variant === 'lose' ? 'You lost' : 'Your gifts:')}
-                </div>
-                {sheet.amount > 0 && (
-                  <div className="inline-flex items-center gap-1.5">
-                    <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-base font-semibold'].join(' ')}>
-                      {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
+          <div className="fixed left-0 right-0 bottom-0 z-50 flex flex-col pb-[env(safe-area-inset-bottom)]">
+            <div className="mx-auto max-w-[390px] w-full bg-black rounded-t-2xl outline outline-1 outline-neutral-700 flex flex-col" style={{ maxHeight: '70vh' }}>
+              {/* Header with title and amount - fixed */}
+              <div className="flex-shrink-0 p-4 pb-3">
+                <div className="flex items-center justify-between">
+                  <div className={[
+                    sheet.variant === 'lose' && sheet.amount === 0 ? 'text-neutral-400' : (sheet.variant === 'lose' ? 'text-red-400' : 'text-white'), 
+                    'text-lg font-semibold'
+                  ].join(' ')}>
+                    {sheet.variant === 'lose' && sheet.amount === 0 ? 'Game cancelled' : (sheet.variant === 'lose' ? 'You lost' : 'Your gifts:')}
+                  </div>
+                  {sheet.amount > 0 && (
+                    <div className="inline-flex items-center gap-1.5">
+                      <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-lg font-semibold'].join(' ')}>
+                        {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
+                      </div>
+                      <img src={TonSvg} alt="TON" className="w-5 h-5 object-contain" />
                     </div>
-                    <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
+                  )}
+                </div>
+              </div>
+
+              {/* Scrollable content area */}
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                {sheet.amount === 0 && sheet.variant === 'lose' ? (
+                  // Game cancelled - show message
+                  <div className="flex items-center justify-center min-h-[200px] py-8">
+                    <div className="text-center text-neutral-400">
+                      <div className="text-5xl mb-4">⏱️</div>
+                      <div className="text-base px-4">
+                        {sheet.message || (
+                          <>
+                            Time's up! Both players failed to select a cell.
+                            <br />
+                            The game has been cancelled.
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2.5 auto-rows-max">
+                  {Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
+                    // Show actual gifts (either won or lost)
+                    sheet.gifts.map((g, i) => (
+                      <div 
+                        key={`gift-${g?.gid ?? i}-${i}`} 
+                        className={[
+                          "aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden",
+                          sheet.variant === 'win' ? 'animate-[giftDrop_0.6s_ease-out_forwards]' : ''
+                        ].join(' ')}
+                        style={sheet.variant === 'win' ? { animationDelay: `${i * 0.1}s` } : {}}
+                      >
+                        {g?.tgsUrl ? (
+                          <TgsSticker
+                            src={g.tgsUrl}
+                            width={64}
+                            height={64}
+                            loop={true}
+                            autoplay={true}
+                            className="opacity-90"
+                          />
+                        ) : (
+                          <img src={EmptyGiftSvg} alt="Gift" className="w-10 h-10 opacity-80" />
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    // Show empty placeholders if no gifts data
+                    Array.from({ length: 6 }, (_, i) => (
+                      <div key={`empty-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
+                        <img src={EmptyGiftSvg} alt="Empty" className="w-10 h-10 opacity-40" />
+                      </div>
+                    ))
+                  )}
                   </div>
                 )}
               </div>
 
-              {sheet.amount === 0 && sheet.variant === 'lose' ? (
-                // Game cancelled - show message
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-neutral-400">
-                    <div className="text-4xl mb-3">⏱️</div>
-                    <div className="text-sm">
-                      {sheet.message || (
-                        <>
-                          Time's up! Both players failed to select a cell.
-                          <br />
-                          The game has been cancelled.
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-3 grid grid-cols-3 gap-2 flex-1 overflow-y-auto pr-1">
-                {Array.isArray(sheet.gifts) && sheet.gifts.length > 0 ? (
-                  // Show actual gifts (either won or lost)
-                  sheet.gifts.map((g, i) => (
-                    <div 
-                      key={`gift-${g?.gid ?? i}-${i}`} 
-                      className={[
-                        "aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center overflow-hidden",
-                        sheet.variant === 'win' ? 'animate-[giftDrop_0.6s_ease-out_forwards]' : ''
-                      ].join(' ')}
-                      style={sheet.variant === 'win' ? { animationDelay: `${i * 0.1}s` } : {}}
-                    >
-                      {g?.tgsUrl ? (
-                        <TgsSticker
-                          src={g.tgsUrl}
-                          width={64}
-                          height={64}
-                          loop={true}
-                          autoplay={true}
-                          className="opacity-90"
-                        />
-                      ) : (
-                        <img src={EmptyGiftSvg} alt="Gift" className="w-10 h-10 opacity-80" />
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  // Show empty placeholders if no gifts data
-                  Array.from({ length: 6 }, (_, i) => (
-                    <div key={`empty-${i}`} className="aspect-square rounded-xl bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,#222_0%,#111_100%)] border border-neutral-700 shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] grid place-items-center">
-                      <img src={EmptyGiftSvg} alt="Empty" className="w-10 h-10 opacity-40" />
-                    </div>
-                  ))
-                )}
+              {/* Only show button for lose or cancelled */}
+              {(sheet.variant === 'lose' || sheet.amount === 0) && (
+                <div className="flex-shrink-0 p-4 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => { navigate('/lobby') }}
+                    className="w-full h-14 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-lg font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform"
+                  >
+                    Back to Home
+                  </button>
                 </div>
               )}
-
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={() => { navigate('/lobby') }}
-                  className="w-full h-12 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
-                >
-                  Back to Home
-                </button>
-              </div>
             </div>
           </div>
         </>
