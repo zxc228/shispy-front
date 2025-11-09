@@ -1,4 +1,6 @@
 import React from 'react'
+import TgsSticker from './TgsSticker'
+import BannerTgs from '../icons/Banner.tgs'
 
 export default function SplashScreen({ onClose }) {
   const handleChannelClick = () => {
@@ -23,10 +25,18 @@ export default function SplashScreen({ onClose }) {
         </svg>
       </button>
 
-      {/* Pirate Icon with glow */}
+      {/* Banner Icon with glow */}
       <div className="mb-8 relative">
         <div className="absolute inset-0 blur-2xl bg-orange-400/20 animate-pulse" />
-        <div className="relative text-[120px] leading-none animate-[bounce_1s_ease-in-out_infinite]">🏴‍☠️</div>
+        <div className="relative">
+          <TgsSticker
+            src={BannerTgs}
+            width={120}
+            height={120}
+            loop={true}
+            autoplay={true}
+          />
+        </div>
       </div>
 
       {/* Title */}
