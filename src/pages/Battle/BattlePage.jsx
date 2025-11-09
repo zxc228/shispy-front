@@ -541,8 +541,8 @@ export default function BattlePage() {
                             src={g.tgsUrl}
                             width={64}
                             height={64}
-                            loop={true}
-                            autoplay={true}
+                            loop={false}
+                            autoplay={false}
                             className="opacity-90"
                           />
                         ) : (

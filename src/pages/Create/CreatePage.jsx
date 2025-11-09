@@ -223,8 +223,8 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
             src={treasure.tgsUrl}
             width={60}
             height={60}
-            loop={true}
-            autoplay={true}
+            loop={false}
+            autoplay={false}
             className="opacity-90"
           />
         ) : (

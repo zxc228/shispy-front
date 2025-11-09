@@ -60,8 +60,8 @@ export default function LobbyCard({ room, onJoin, isNew = false }) {
                   src={tgsUrl}
                   width={48}
                   height={48}
-                  loop={true}
-                  autoplay={true}
+                  loop={false}
+                  autoplay={false}
                 />
               ) : (
                 <img
