@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import TonSvg from "../../components/icons/TonIcon.svg";
+import DollarIcon from "../../components/icons/DollarIcon.svg";
 import { getTreasuryGifts, postWithdrawal } from "../../shared/api/treasury.api";
 import TgsSticker from "../../components/common/TgsSticker";
 import ChestTgs from "../../components/tgs/Chest.tgs";
@@ -331,7 +332,7 @@ function MyTreasureCard({ title, tgsUrl, value, slug, gid, selected, onToggle })
       <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-1">
         <div className="inline-flex items-center gap-1">
           <span className="text-white text-xs font-semibold">{Number(value ?? 0).toFixed(2)}</span>
-          <img src={TonSvg} alt="TON" className="w-3 h-3 object-contain" />
+          <img src={DollarIcon} alt="USD" className="w-3 h-3 object-contain" />
         </div>
       </div>
 
@@ -465,10 +466,10 @@ function WithdrawBar({ count, value, onClick }) {
                 {count} {count === 1 ? 'gift' : 'gifts'}
               </div>
               <div className="h-7 px-2 bg-black rounded-xl inline-flex items-center gap-1.5 shrink-0">
-                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                 <span className="text-white text-base font-bold">
-                  {value.toFixed(2)} TON
+                  {value.toFixed(2)}
                 </span>
+                <img src={DollarIcon} alt="USD" className="w-4 h-4 object-contain" />
               </div>
             </div>
           </div>
@@ -516,7 +517,7 @@ function WithdrawModal({ count, value, loading, onConfirm, onCancel }) {
             <div className="text-neutral-400 text-xs mb-1">Total gift value</div>
             <div className="flex items-center justify-center gap-2 text-xl font-bold text-white">
               {value.toFixed(2)}
-              <img src={TonSvg} alt="TON" className="w-5 h-5 object-contain" />
+              <img src={DollarIcon} alt="USD" className="w-5 h-5 object-contain" />
             </div>
           </div>
           

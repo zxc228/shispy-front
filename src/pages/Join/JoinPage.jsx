@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import TonSvg from '../../components/icons/TonIcon.svg'
-import { getGifts, joinBattle } from '../../shared/api/lobby.api'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
+import { getGifts, joinBattle, getQueue } from '../../shared/api/lobby.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { transformGiftsData } from '../../shared/utils/gifts'
@@ -17,6 +18,30 @@ export default function JoinPage() {
   const [inventory, setInventory] = useState([])
   const [loading, setLoading] = useState(true)
   const [joiningBattle, setJoiningBattle] = useState(false) // Loading state for join animation
+  const [roomBetAmount, setRoomBetAmount] = useState(null) // Store room's bet amount for validation
+
+  // Load room info to get bet amount
+  useEffect(() => {
+    let cancelled = false
+    async function loadRoomInfo() {
+      try {
+        const rooms = await getQueue()
+        if (cancelled) return
+        const room = Array.isArray(rooms) ? rooms.find(r => String(r?.queque_id) === String(id)) : null
+        if (room) {
+          const betAmount = Number(room?.value ?? 0)
+          logger.debug('JoinPage: loaded room bet amount', { queque_id: id, betAmount })
+          setRoomBetAmount(betAmount)
+        } else {
+          logger.warn('JoinPage: room not found', { queque_id: id })
+        }
+      } catch (e) {
+        logger.error('JoinPage: failed to load room info', e)
+      }
+    }
+    loadRoomInfo()
+    return () => { cancelled = true }
+  }, [id])
 
   // Load available gifts (same as CreatePage)
   useEffect(() => {
@@ -54,6 +79,25 @@ export default function JoinPage() {
     return Number(sum.toFixed(2))
   }, [selectedIds, inventory])
 
+  // Validate bet difference (max 20%)
+  const betValidation = useMemo(() => {
+    if (roomBetAmount === null || roomBetAmount === 0 || totalTon === 0) {
+      return { isValid: true, difference: 0, message: '' }
+    }
+    
+    const difference = Math.abs(totalTon - roomBetAmount)
+    const percentDiff = (difference / roomBetAmount) * 100
+    const isValid = percentDiff <= 20
+    
+    return {
+      isValid,
+      difference: percentDiff,
+      message: isValid 
+        ? '' 
+        : `Bet difference too high: ${percentDiff.toFixed(1)}%. Max allowed: 20%`
+    }
+  }, [totalTon, roomBetAmount])
+
   const toggleSelect = (tid) => {
     setSelectedIds((prev) =>
       prev.includes(tid) ? prev.filter((x) => x !== tid) : [...prev, tid]
@@ -66,6 +110,17 @@ export default function JoinPage() {
 
   const handleJoin = async () => {
     if (!selectedCount) return
+    
+    // Check bet validation
+    if (!betValidation.isValid) {
+      logger.warn('JoinPage: bet validation failed', { 
+        totalTon, 
+        roomBetAmount, 
+        difference: betValidation.difference 
+      })
+      return
+    }
+    
     // Backend expects array of gid strings
     const giftIds = [...selectedIds]
     const quequeId = Number(id)
@@ -161,6 +216,8 @@ export default function JoinPage() {
       <SummaryFooter
         selectedCount={selectedCount}
         totalTon={totalTon}
+        roomBetAmount={roomBetAmount}
+        betValidation={betValidation}
         onJoin={handleJoin}
       />
     </div>
@@ -277,8 +334,10 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
   )
 }
 
-function SummaryFooter({ selectedCount, totalTon, onJoin }) {
-  const disabled = selectedCount === 0
+function SummaryFooter({ selectedCount, totalTon, roomBetAmount, betValidation, onJoin }) {
+  const disabled = selectedCount === 0 || !betValidation.isValid
+  const showValidation = selectedCount > 0 && roomBetAmount !== null && !betValidation.isValid
+  
   return (
   <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
@@ -290,11 +349,32 @@ function SummaryFooter({ selectedCount, totalTon, onJoin }) {
                 {selectedCount} {selectedCount === 1 ? 'gift' : 'gifts'}
               </div>
               <div className="h-7 px-2 bg-black rounded-xl inline-flex items-center gap-1.5 shrink-0">
-                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
-                <span className="text-white text-base font-bold">{totalTon.toFixed(2)} TON</span>
+                <span className="text-white text-base font-bold">{totalTon.toFixed(2)}</span>
+                <img src={DollarIcon} alt="USD" className="w-4 h-4 object-contain" />
               </div>
             </div>
+            {roomBetAmount !== null && (
+              <div className="text-neutral-500 text-xs">
+                Room bet: {roomBetAmount.toFixed(2)}
+              </div>
+            )}
           </div>
+          
+          {/* Validation warning */}
+          {showValidation && (
+            <div className="mt-2 px-3 py-2 bg-red-900/20 border border-red-500/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <span className="text-red-400 text-lg leading-none">⚠️</span>
+                <div className="flex-1">
+                  <div className="text-red-400 text-xs font-medium">Bet mismatch</div>
+                  <div className="text-red-300/80 text-xs mt-0.5">
+                    Your bet differs by {betValidation.difference.toFixed(1)}% from the room's bet. Max allowed: 20%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="mt-1.5 relative">
             {!disabled && (
               <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />

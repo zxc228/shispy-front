@@ -26,7 +26,7 @@ export default function RulesPage() {
         stakesItems: [
           'You must stake gifts to create or join a battle.',
           'Winner receives the opponent’s staked gifts.',
-          'Commission: 0.4 TON per game.',
+          'Commission: 0.5 TON per game.',
         ],
         fair: 'Fair play',
         fairItems: [
@@ -58,7 +58,7 @@ export default function RulesPage() {
         stakesItems: [
           'Чтобы создать/войти в битву, нужно поставить подарки.',
           'Победитель получает поставленные соперником подарки.',
-          'Комиссия: 0.4 TON за игру.',
+          'Комиссия: 0.5 TON за игру.',
         ],
         fair: 'Честная игра',
         fairItems: [

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import StatusBar from './StatusBar'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
 import EmptyGiftSvg from '../../components/icons/EmptyGift.svg'
 import WinIcon from '../../components/icons/WinIcon.png'
 import DefeatIcon from '../../components/icons/DefeatIcon.png'
@@ -451,25 +452,33 @@ export default function BattlePage() {
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { navigate('/lobby') }} />
           
           {/* Victory/Defeat Icon - centered above the sheet */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ paddingBottom: '30vh' }}>
+          <div className="fixed inset-0 z-50 pointer-events-none" style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: 'min(35vh, 300px)'
+          }}>
             <img 
               src={sheet.variant === 'win' ? WinIcon : DefeatIcon} 
               alt={sheet.variant === 'win' ? 'Victory' : 'Defeat'}
-              className="object-contain animate-[zoomIn_0.6s_ease-out]"
+              className="object-contain"
               style={{
-                width: '768px',
+                width: 'min(768px, 85vw)',
                 height: 'auto',
-                maxWidth: '90vw',
+                maxHeight: '40vh',
                 filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8))',
                 animation: 'zoomIn 0.6s ease-out, float 3s ease-in-out infinite'
               }}
             />
           </div>
           
-          <div className="fixed left-0 right-0 bottom-0 z-50 flex flex-col pb-[env(safe-area-inset-bottom)]">
-            <div className="mx-auto max-w-[390px] w-full bg-black rounded-t-2xl outline outline-1 outline-neutral-700 flex flex-col" style={{ maxHeight: '70vh' }}>
+          <div className="fixed left-0 right-0 bottom-0 z-50 flex flex-col" style={{ maxHeight: '100dvh' }}>
+            <div className="mx-auto max-w-[390px] w-full bg-black rounded-t-2xl outline outline-1 outline-neutral-700 flex flex-col" style={{ 
+              maxHeight: 'min(70vh, calc(100dvh - 100px))',
+              height: 'auto'
+            }}>
               {/* Header with title and amount - fixed */}
-              <div className="flex-shrink-0 p-4 pb-3">
+              <div className="flex-shrink-0 p-4 pb-3 border-b border-neutral-800">
                 <div className="flex items-center justify-between">
                   <div className={[
                     sheet.variant === 'lose' && sheet.amount === 0 ? 'text-neutral-400' : (sheet.variant === 'lose' ? 'text-red-400' : 'text-white'), 
@@ -482,14 +491,22 @@ export default function BattlePage() {
                       <div className={[sheet.variant === 'lose' ? 'text-red-400' : 'text-green-400', 'text-lg font-semibold'].join(' ')}>
                         {sheet.variant === 'lose' ? `-${sheet.amount.toFixed(2)}` : `+${sheet.amount.toFixed(2)}`}
                       </div>
-                      <img src={TonSvg} alt="TON" className="w-5 h-5 object-contain" />
+                      <img src={DollarIcon} alt="USD" className="w-5 h-5 object-contain" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Scrollable content area */}
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div 
+                className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4"
+                style={{ 
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'thin',
+                  minHeight: '200px',
+                  maxHeight: 'calc(70vh - 180px)'
+                }}
+              >
                 {sheet.amount === 0 && sheet.variant === 'lose' ? (
                   // Game cancelled - show message
                   <div className="flex items-center justify-center min-h-[200px] py-8">
@@ -547,15 +564,20 @@ export default function BattlePage() {
 
               {/* Only show button for lose or cancelled */}
               {(sheet.variant === 'lose' || sheet.amount === 0) && (
-                <div className="flex-shrink-0 p-4 pt-3">
+                <div className="flex-shrink-0 p-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-neutral-800">
                   <button
                     type="button"
                     onClick={() => { navigate('/lobby') }}
-                    className="w-full h-14 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-lg font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform"
+                    className="w-full h-12 px-4 py-3 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] text-white text-base font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] transition-transform"
                   >
                     Back to Home
                   </button>
                 </div>
+              )}
+              
+              {/* Safe area spacer at the bottom (for win case without button) */}
+              {sheet.variant === 'win' && (
+                <div className="flex-shrink-0 h-[calc(1rem+env(safe-area-inset-bottom))] border-t border-neutral-800" />
               )}
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTelegram } from '../../providers/TelegramProvider'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
 import EmptyPersonSvg from '../../components/icons/EmptyPerson.svg'
 import { getProfile } from '../../shared/api/users.api'
 import { getReferralPayments } from '../../shared/api/referrals.api'
@@ -141,9 +142,9 @@ export default function ProfilePage() {
         <div className="p-2 bg-[radial-gradient(ellipse_100%_100%_at_50%_0%,_#222222_0%,_#111111_100%)] rounded-xl shadow-[inset_0_-1px_0_0_rgba(88,88,88,1)] border border-neutral-700/60 flex flex-col justify-center gap-1 overflow-hidden">
           <div className="inline-flex items-center gap-1.5">
             <div className="text-neutral-50 text-lg font-medium font-sans">{Number(profile?.value ?? 0).toFixed(2)}</div>
-            <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain translate-y-[0.5px]" />
+            <img src={DollarIcon} alt="USD" className="w-3.5 h-3.5 object-contain translate-y-[0.5px]" />
           </div>
-          <div className="text-white/50 text-xs font-normal font-sans">Won TON</div>
+          <div className="text-white/50 text-xs font-normal font-sans">Won USD</div>
         </div>
       </section>
 
@@ -298,7 +299,7 @@ export default function ProfilePage() {
                   <div className="p-2 bg-neutral-800 rounded-[10px]">
                     <div className="inline-flex items-center gap-1">
                       <div className={`${win ? 'text-green-500' : 'text-red-700'} text-sm font-semibold font-sans`}>{win ? '+' : '-'}{amountAbs.toFixed(2)}</div>
-                      <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
+                      <img src={DollarIcon} alt="USD" className="w-4 h-4 object-contain" />
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import React from 'react'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
 import TreasureSvg from '../../components/icons/EmptyGift.svg'
 import HostPlaceholder from '../../components/icons/EmptyPerson.svg'
 import TgsSticker from '../../components/common/TgsSticker'
@@ -44,7 +45,7 @@ export default function LobbyCard({ room, onJoin, isNew = false }) {
         </div>
         <div className="absolute right-0 top-0 h-10 pl-5 pr-3 pt-2 pb-1 bg-neutral-700 rounded-l-2xl inline-flex items-center gap-1">
           <span className="text-white font-semibold">{room.ton.toFixed(2)}</span>
-          <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
+          <img src={DollarIcon} alt="USD" className="w-4 h-4 object-contain" />
         </div>
       </div>
 

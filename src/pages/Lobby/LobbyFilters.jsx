@@ -1,5 +1,5 @@
 import React from 'react'
-import TonSvg from '../../components/icons/TonIcon.svg'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
 
 export default function LobbyFilters({ active, onChange }) {
   const Chip = ({ value, children, active }) => {
@@ -18,8 +18,8 @@ export default function LobbyFilters({ active, onChange }) {
     )
   }
 
-  const TonIcon = () => (
-    <img src={TonSvg} alt="TON" className="w-3.5 h-3.5 object-contain" />
+  const DollarIconComponent = () => (
+    <img src={DollarIcon} alt="USD" className="w-3.5 h-3.5 object-contain" />
   )
 
   return (
@@ -28,15 +28,15 @@ export default function LobbyFilters({ active, onChange }) {
         All
       </Chip>
       <Chip value="1-5" active={active === '1-5'}>
-        <TonIcon />
+        <DollarIconComponent />
         <span className="leading-none">1-5</span>
       </Chip>
       <Chip value="5-15" active={active === '5-15'}>
-        <TonIcon />
+        <DollarIconComponent />
         <span className="leading-none">5-15</span>
       </Chip>
       <Chip value="15+" active={active === '15+'}>
-        <TonIcon />
+        <DollarIconComponent />
         <span className="leading-none">15+</span>
       </Chip>
     </div>

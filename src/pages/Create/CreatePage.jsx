@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TonSvg from '../../components/icons/TonIcon.svg'
+import DollarIcon from '../../components/icons/DollarIcon.svg'
 import { getGifts, createBattle } from '../../shared/api/lobby.api'
 import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
@@ -252,10 +253,10 @@ function SummaryFooter({ selectedCount, totalTon, onCreate }) {
                 {selectedCount} {selectedCount === 1 ? 'gift' : 'gifts'}
               </div>
               <div className="h-7 px-2 bg-black rounded-xl inline-flex items-center gap-1.5 shrink-0">
-                <img src={TonSvg} alt="TON" className="w-4 h-4 object-contain" />
                 <span className="text-white text-base font-bold">
-                  {totalTon.toFixed(2)} TON
+                  {totalTon.toFixed(2)}
                 </span>
+                <img src={DollarIcon} alt="USD" className="w-4 h-4 object-contain" />
               </div>
             </div>
           </div>
