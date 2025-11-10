@@ -272,6 +272,7 @@ export default function TreasurePage() {
           loading={withdrawing}
           onConfirm={handleWithdraw}
           onCancel={() => setShowWithdrawModal(false)}
+          commission={minWithdrawBalance}
         />
       )}
       
@@ -524,6 +525,11 @@ function WithdrawBar({ count, value, onClick, onClose, disabled = false, minBala
             </div>
           </div>
 
+          {/* Commission info */}
+          <div className="mt-2 text-center text-xs text-neutral-500">
+            Commission: {minBalance} TON will be deducted from your balance
+          </div>
+
           <div className="mt-1.5 relative">
             <div className="absolute inset-0 h-11 p-2.5 bg-gradient-to-b from-orange-400/75 to-amber-700/75 rounded-xl blur-[2.5px] -z-10 pointer-events-none" />
             <button
@@ -543,7 +549,7 @@ function WithdrawBar({ count, value, onClick, onClose, disabled = false, minBala
 
 /* --------- Withdraw confirmation modal --------- */
 
-function WithdrawModal({ count, value, loading, onConfirm, onCancel }) {
+function WithdrawModal({ count, value, loading, onConfirm, onCancel, commission = 0.2 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 animate-[fadeIn_0.2s_ease-out] px-4">
       <div className="bg-neutral-900 rounded-2xl border border-neutral-700 max-w-sm w-full p-6 space-y-4 animate-[slideUp_0.3s_ease-out]">
@@ -579,7 +585,7 @@ function WithdrawModal({ count, value, loading, onConfirm, onCancel }) {
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                 <path d="M12 16V12M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              <span>Commission will be deducted from your balance</span>
+              <span>Commission {commission} TON will be deducted from your balance</span>
             </div>
           </div>
         </div>

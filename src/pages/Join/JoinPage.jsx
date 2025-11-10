@@ -79,7 +79,7 @@ export default function JoinPage() {
     return Number(sum.toFixed(2))
   }, [selectedIds, inventory])
 
-  // Validate bet difference (max 20%)
+  // Validate bet difference (max 50%)
   const betValidation = useMemo(() => {
     if (roomBetAmount === null || roomBetAmount === 0 || totalTon === 0) {
       return { isValid: true, difference: 0, message: '' }
@@ -87,14 +87,14 @@ export default function JoinPage() {
     
     const difference = Math.abs(totalTon - roomBetAmount)
     const percentDiff = (difference / roomBetAmount) * 100
-    const isValid = percentDiff <= 20
+    const isValid = percentDiff <= 50
     
     return {
       isValid,
       difference: percentDiff,
       message: isValid 
         ? '' 
-        : `Bet difference too high: ${percentDiff.toFixed(1)}%. Max allowed: 20%`
+        : `Bet difference too high: ${percentDiff.toFixed(1)}%. Max allowed: 50%`
     }
   }, [totalTon, roomBetAmount])
 
@@ -368,7 +368,7 @@ function SummaryFooter({ selectedCount, totalTon, roomBetAmount, betValidation, 
                 <div className="flex-1">
                   <div className="text-red-400 text-xs font-medium">Bet mismatch</div>
                   <div className="text-red-300/80 text-xs mt-0.5">
-                    Your bet differs by {betValidation.difference.toFixed(1)}% from the room's bet. Max allowed: 20%
+                    Your bet differs by {betValidation.difference.toFixed(1)}% from the room's bet. Max allowed: 50%
                   </div>
                 </div>
               </div>
