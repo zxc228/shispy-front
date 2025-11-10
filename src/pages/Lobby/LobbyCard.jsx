@@ -7,7 +7,7 @@ import TgsSticker from '../../components/common/TgsSticker'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; giftTgsUrls:string[]; giftCount:number }} Room */
 
-export default function LobbyCard({ room, onJoin, isNew = false }) {
+export default function LobbyCard({ room, onJoin, isNew = false, disabled = false }) {
   const KeyIcon = () => (
     <span className="relative inline-block w-3.5 h-3.5 align-middle">
       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-0.5 bg-white rounded" />
@@ -87,7 +87,8 @@ export default function LobbyCard({ room, onJoin, isNew = false }) {
         <button
           type="button"
           onClick={() => onJoin(room.id)}
-          className="h-12 ml-auto w-[88px] shrink-0 mr-1 px-4 py-3 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] inline-flex items-center justify-center gap-1 text-white text-base font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px]"
+          disabled={disabled}
+          className="h-12 ml-auto w-[88px] shrink-0 mr-1 px-4 py-3 bg-gradient-to-b from-orange-400 to-amber-700 rounded-xl shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] inline-flex items-center justify-center gap-1 text-white text-base font-semibold [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] active:translate-y-[0.5px] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0"
         >
           Join
         </button>

@@ -22,7 +22,7 @@ export default function TreasurePage() {
   // Add new gift instruction modal
   const [showAddInstructionModal, setShowAddInstructionModal] = useState(false);
   
-  const { refresh: refreshBalance } = useBalance();
+  const { refresh: refreshBalance, amount: balance } = useBalance();
 
   const loadGifts = async (showLoading = false) => {
     try {
@@ -133,9 +133,22 @@ export default function TreasurePage() {
       .reduce((sum, item) => sum + (item.value || 0), 0);
   }, [myItems, selectedGids]);
   
+  // Check if balance is sufficient for withdrawal
+  const minWithdrawBalance = Number(import.meta.env.VITE_MIN_WITHDRAW_BALANCE) || 0.2;
+  const hasInsufficientWithdrawBalance = balance < minWithdrawBalance;
+  
   // Handle withdrawal
   const handleWithdraw = async () => {
     if (selectedGids.length === 0) return;
+    
+    // Check minimum balance for withdrawal commission
+    const minWithdrawBalance = Number(import.meta.env.VITE_MIN_WITHDRAW_BALANCE) || 0.2;
+    if (balance < minWithdrawBalance) {
+      console.warn('TreasurePage: insufficient balance for withdrawal', { balance, required: minWithdrawBalance });
+      setError(`Insufficient balance. Minimum ${minWithdrawBalance} TON required for withdrawal commission.`);
+      setShowWithdrawModal(false);
+      return;
+    }
     
     try {
       setWithdrawing(true);
@@ -189,9 +202,24 @@ export default function TreasurePage() {
             <EmptyInventory />
           ) : (
             <>
-              <h2 className="px-1 text-xl font-medium leading-none text-neutral-50">
-                My Treasures
-              </h2>
+              <div className="px-1 flex items-center justify-between">
+                <h2 className="text-xl font-medium leading-none text-neutral-50">
+                  My Treasures
+                </h2>
+                {selectedGids.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGids([])}
+                    className="text-sm text-orange-400 hover:text-orange-300 active:scale-95 transition-all flex items-center gap-1"
+                  >
+                    <span>Clear</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
               <Grid3>
                 {/* Add new Treasure как первая карточка */}
                 <AddNewTreasureCardInGrid onClick={() => setShowAddInstructionModal(true)} />
@@ -230,6 +258,9 @@ export default function TreasurePage() {
           count={selectedGids.length}
           value={selectedValue}
           onClick={() => setShowWithdrawModal(true)}
+          onClose={() => setSelectedGids([])}
+          disabled={hasInsufficientWithdrawBalance}
+          minBalance={minWithdrawBalance}
         />
       )}
       
@@ -454,11 +485,30 @@ function BuyBar({
 
 /* --------- Withdraw bar (fixed over BottomNav) --------- */
 
-function WithdrawBar({ count, value, onClick }) {
+function WithdrawBar({ count, value, onClick, onClose, disabled = false, minBalance = 0.2 }) {
   return (
     <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
-        <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
+        <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900 relative">
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-neutral-700 active:scale-95 transition-all z-10"
+            aria-label="Clear selection"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          {disabled && (
+            <div className="mb-2 px-2 py-1.5 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <div className="text-red-400 text-xs font-medium text-center">
+                Insufficient balance. Minimum {minBalance} TON required for withdrawal commission.
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-center gap-1.5 text-center">
             <div className="text-neutral-700 text-sm font-medium">Selected:</div>
             <div className="inline-flex items-center gap-2">
@@ -479,7 +529,8 @@ function WithdrawBar({ count, value, onClick }) {
             <button
               type="button"
               onClick={onClick}
-              className="w-full h-11 px-4 py-2.5 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 active:translate-y-[0.5px] transition-transform duration-150"
+              disabled={disabled}
+              className="w-full h-11 px-4 py-2.5 rounded-xl bg-gradient-to-b from-orange-400 to-amber-700 text-white shadow-[inset_0_-1px_0_0_rgba(230,141,74,1)] [text-shadow:_0_1px_25px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 active:translate-y-[0.5px] transition-transform duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0"
             >
               Send to Profile
             </button>

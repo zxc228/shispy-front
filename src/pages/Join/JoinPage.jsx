@@ -7,7 +7,6 @@ import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { transformGiftsData } from '../../shared/utils/gifts'
 import TgsSticker from '../../components/common/TgsSticker'
-import { useBalance } from '../../providers/BalanceProvider'
 
 /** @typedef {{ id: string; gid: string; slug: string; value: number; tgsUrl: string }} Treasure */
 
@@ -15,7 +14,6 @@ export default function JoinPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { withLoading } = useLoading()
-  const { amount: balance } = useBalance()
 
   const [inventory, setInventory] = useState([])
   const [loading, setLoading] = useState(true)
@@ -112,12 +110,6 @@ export default function JoinPage() {
 
   const handleJoin = async () => {
     if (!selectedCount) return
-    
-    // Check minimum balance for commission
-    if (balance < 0.5) {
-      logger.warn('JoinPage: insufficient balance for commission', { balance, required: 0.5 })
-      return
-    }
     
     // Check bet validation
     if (!betValidation.isValid) {
@@ -227,7 +219,6 @@ export default function JoinPage() {
         roomBetAmount={roomBetAmount}
         betValidation={betValidation}
         onJoin={handleJoin}
-        balance={balance}
       />
     </div>
   )
@@ -343,22 +334,14 @@ function TreasureCard({ variant, treasure, selected, onToggle }) {
   )
 }
 
-function SummaryFooter({ selectedCount, totalTon, roomBetAmount, betValidation, onJoin, balance }) {
-  const insufficientBalance = balance < 0.5
-  const disabled = selectedCount === 0 || !betValidation.isValid || insufficientBalance
+function SummaryFooter({ selectedCount, totalTon, roomBetAmount, betValidation, onJoin }) {
+  const disabled = selectedCount === 0 || !betValidation.isValid
   const showValidation = selectedCount > 0 && roomBetAmount !== null && !betValidation.isValid
   
   return (
   <div className="fixed left-0 right-0 bottom-[calc(88px+env(safe-area-inset-bottom))] w-full z-40 px-2.5">
       <div className="mx-auto max-w-[390px] relative">
         <div className="rounded-2xl border border-neutral-700 pt-2 px-3 pb-2 bg-neutral-900">
-          {insufficientBalance && (
-            <div className="mb-2 px-2 py-1.5 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <div className="text-red-400 text-xs font-medium text-center">
-                Insufficient balance. Minimum 0.5 TON required for commission.
-              </div>
-            </div>
-          )}
           <div className="flex flex-col items-center gap-1.5 text-center">
             <div className="text-neutral-700 text-sm font-medium">Selected:</div>
             <div className="inline-flex items-center gap-2">

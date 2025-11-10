@@ -10,6 +10,7 @@ import { logger } from '../../shared/logger'
 import { useLoading } from '../../providers/LoadingProvider'
 import { useGameSocket } from '../../providers/GameSocketProvider'
 import { getGiftTgsUrl } from '../../shared/utils/gifts'
+import { useBalance } from '../../providers/BalanceProvider'
 
 /** @typedef {{ id:string; host:string; roomNo:string; minBet:number; ton:number; gifts:string[] }} Room */
 
@@ -18,6 +19,7 @@ export default function LobbyPage() {
   const location = useLocation()
   const { withLoading } = useLoading()
   const { getSocket, connected } = useGameSocket()
+  const { amount: balance } = useBalance()
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | '1-5' | '5-15' | '15+'
   /** @type {[Room[], Function]} */
   const [rooms, setRooms] = useState(/** @type {Room[]} */ ([]))
@@ -350,11 +352,22 @@ export default function LobbyPage() {
     }
   }, [activeFilter, rooms])
 
+  const minBalance = Number(import.meta.env.VITE_MIN_COMMISSION_BALANCE) || 0.5
+  const hasInsufficientBalance = balance < minBalance
+
   const onJoin = (roomId) => {
+    if (hasInsufficientBalance) {
+      logger.warn('LobbyPage: cannot join, insufficient balance', { balance, required: minBalance })
+      return
+    }
     navigate(`/join/${roomId}`)
   }
 
   const onCreate = () => {
+    if (hasInsufficientBalance) {
+      logger.warn('LobbyPage: cannot create, insufficient balance', { balance, required: minBalance })
+      return
+    }
     // переход на унифицированный экран создания
     navigate('/create')
   }
@@ -416,6 +429,21 @@ export default function LobbyPage() {
           <LobbyFilters active={activeFilter} onChange={setActiveFilter} />
         </div>
 
+        {/* insufficient balance warning */}
+        {hasInsufficientBalance && (
+          <div className="mt-3 px-3 py-2.5 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="flex items-start gap-2">
+              <span className="text-red-400 text-lg leading-none mt-0.5">⚠️</span>
+              <div className="flex-1">
+                <div className="text-red-400 text-sm font-semibold">Insufficient Balance</div>
+                <div className="text-red-400/80 text-xs mt-0.5">
+                  You need at least {minBalance} TON to create or join battles (commission fee).
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* waiting banner */}
         {waiting && (
           <div className="mt-3 px-3 py-2 bg-neutral-800 rounded-xl border border-neutral-700/60 text-sm text-white/80 flex items-center justify-between">
@@ -446,6 +474,7 @@ export default function LobbyPage() {
               room={room} 
               onJoin={onJoin} 
               isNew={newRoomIds.has(room.id)}
+              disabled={hasInsufficientBalance}
             />)
           )}
           {filtered.length === 0 && (
@@ -456,7 +485,7 @@ export default function LobbyPage() {
         </div>
       </div>
       {/* Единый CTA — прячем, если есть активное ожидание */}
-      {!waiting && <CreateBattleCTA onClick={onCreate} />}
+      {!waiting && <CreateBattleCTA onClick={onCreate} disabled={hasInsufficientBalance} />}
     </div>
   )
 }
